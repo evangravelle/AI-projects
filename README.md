@@ -1,2 +1,2 @@
 # AI-projects
-For implemented and testing various artificial intelligence algorithms
+For implementing and testing various artificial intelligence algorithms
