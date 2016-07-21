@@ -4,6 +4,7 @@ env = gym.make('MountainCar-v0')
 
 
 # FIX ELIGIBILITY TRACES! THEY ARENT CONTINUOUS
+# try using replacing traces, Sutton says they do better for this example
 
 
 # There are 3 discrete actions, presumably accelerate left, right, or do nothing
@@ -42,15 +43,15 @@ for i in range(num_row):
 
 
 # Various functions
-def normalize_obs(_s):
+def normalize_state(_s):
     _y = np.zeros(dim)
     for _i in range(len(_y)):
         _y[i] = (_s[_i] - xbar[0, _i])/(xbar[1, _i] - xbar[0, _i])
     return _y
 
 
-def phi(_state, _k):
-    return np.exp(-np.linalg.norm(_state - c[_k]) / den)
+def phi(_state, _i):
+    return np.exp(-np.linalg.norm(_state - c[_i]) / den)
 
 
 def epsilon_greedy(_epsilon, _vals):
@@ -73,26 +74,28 @@ def action_values(_state, _theta):
 
 def action_value(_state, _action, _theta):
     _shape = _theta.shape
-    _val = np.zeros(_shape[1])
+    _val = 0
     for _k in range(_shape[0]):
         _val[_action] += _theta[_k, _action] * phi(_state, _action)
     return _val
 
 
 for ep in range(1):
-    state = env.reset()
+    state = normalize_state(env.reset())
     vals = action_values(state, theta)
     action = epsilon_greedy(epsilon, vals)
     for t in range(200):
         env.render()
         new_state, reward, done, info = env.step(action)
+        new_state = normalize_state(new_state)
         new_vals = action_values(new_state, theta)
         new_action = epsilon_greedy(epsilon, new_vals)
         print new_state, new_action, theta.shape, state, action
         delta = reward + gamma * action_value(new_state, new_action, theta) - action_value(state, action, theta)
-        e[state, action] += 1
         for i in range(num_row * num_col):
+            e[i, action] += phi(state, i)
             for k in range(num_actions):
+                print alpha, delta, e[i, k]
                 theta[i, k] += alpha * delta * e[i, k]
                 e[i, k] *= gamma * Lambda
         state = new_state
