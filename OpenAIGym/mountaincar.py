@@ -2,9 +2,8 @@ import gym
 import numpy as np
 env = gym.make('MountainCar-v0')
 
-
-# FIX ELIGIBILITY TRACES! THEY ARENT CONTINUOUS
-# try using replacing traces, Sutton says they do better for this example
+# plot the value function at certain time intervals!
+# try using replacing or accumulating traces, Sutton says replacing are better
 
 # There are 3 discrete actions, presumably accelerate left, right, or do nothing
 # There are 2 observations, one in [-1.2, 0.6] and the other in [-0.07, 0.07]
@@ -16,8 +15,8 @@ dim = env.observation_space.high.size
 xbar = np.zeros((2, dim))
 xbar[0, :] = env.observation_space.low
 xbar[1, :] = env.observation_space.high
-num_row = 4
-num_col = 4
+num_row = 11
+num_col = 11
 width = 1. / (num_row - 1.)
 height = 1. / (num_col - 1.)
 sigma = width / 2.
@@ -26,7 +25,6 @@ state = np.random.random(2)
 activations = np.zeros(num_row * num_col)
 new_activations = np.zeros(num_row * num_col)
 np.set_printoptions(precision=2)
-
 
 # Learning Parameters
 epsilon = 0.1
@@ -82,44 +80,54 @@ def action_value(_activations, _action, _theta):
     return _val
 
 
-for ep in range(1):
+for ep in range(20):
+
     e = np.zeros((num_row * num_col, num_actions))
     state = normalize_state(env.reset())
+
     for i in range(num_row * num_col):
         activations[i] = phi(state, i)
+
+    # print "activations = ", np.reshape(activations.ravel(order='F'), (num_row, num_col))
     vals = action_values(activations, theta)
     action = epsilon_greedy(epsilon, vals)
-    for t in range(10):
+    for t in range(1000):
         env.render()
         new_state, reward, done, info = env.step(action)
         new_state = normalize_state(new_state)
+
         for i in range(num_row * num_col):
             new_activations[i] = phi(new_state, i)
+
         new_vals = action_values(new_activations, theta)
         new_action = epsilon_greedy(epsilon, new_vals)
         Q2 = action_value(new_activations, new_action, theta)
         Q1 = action_value(activations, action, theta)
         delta = (reward + gamma * action_value(new_activations, new_action, theta) -
                  action_value(activations, action, theta))
+
         for i in range(num_row * num_col):
             # e[i, action] += activations[i]  # accumulating traces
             e[i, action] = activations[i]  # replacing traces
             for k in range(num_actions):
                 theta[i, k] += alpha * delta * e[i, k]
                 e[i, k] *= gamma * Lambda
-        if t % 1 == 0:
+
+        if t % 1 != 0:
             print "t = ", t
-            print "Q_current = ", Q1
-            print "Q_future = ", Q2
-            print "state = ", state
-            print "action = ", action
-            print "delta = ", delta
-            # print "activations = ", activations
-            # print "e =", e
-            print "theta = ", theta.reshape((num_row, num_col, num_actions))
+            # print "new_state = ", new_state
+            # print "new_activations = ", np.reshape(new_activations.ravel(order='F'), (num_row, num_col))
+            # print "Q_current = ", Q1
+            # print "Q_future = ", Q2
+            # print "action = ", action
+            # print "delta = ", delta
+            print "e =", e
+            print "theta = \n", np.reshape(theta.ravel(order='F'), (num_actions, num_row, num_col))
             print "---------------------------------------------------------------------------"
-        state = new_state
-        activations = new_activations
+
+        # print "state = ", state
+        state = new_state.copy()
+        activations = new_activations.copy()
         action = new_action
         if done:
             break
