@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import matplotlib.pyplot as plt
 env = gym.make('MountainCar-v0')
 
 # plot the value function at certain time intervals!
@@ -28,21 +29,23 @@ np.set_printoptions(precision=2)
 
 # Learning Parameters
 epsilon = 0.1
-Lambda = 0.9
-alpha = 0.5
-gamma = 0.9
+Lambda = 0.5
+alpha = 0.2
+gamma = 0.95
 
 # The state-action value function is of the form V(s) = theta.T * phi(s).
 # Initializing theta to zeros is appropriately optimistic
 theta = np.zeros((num_row * num_col, num_actions))
 c = np.zeros((num_row * num_col, dim))
+
+
 for i in range(num_row):
     for j in range(num_col):
         k = i*num_col + j
         c[k, :] = (i * height, j * width)
 
 
-# Various functions
+# Remaps the state to between 0 and 1
 def normalize_state(_s):
     _y = np.zeros(len(_s))
     for _i in range(len(_s)):
@@ -50,8 +53,12 @@ def normalize_state(_s):
     return _y
 
 
-def phi(_state, _i):
-    return np.exp(-np.linalg.norm(_state - c[_i, :]) ** 2 / den)
+# outputs vector phi
+def phi(_state):
+    _phi = np.zeros(num_row * num_col)
+    for _k in range(num_row * num_col):
+        _phi[_k] = np.exp(-np.linalg.norm(_state - c[_k, :]) ** 2 / den)
+    return _phi
 
 
 def epsilon_greedy(_epsilon, _vals):
@@ -64,41 +71,28 @@ def epsilon_greedy(_epsilon, _vals):
 
 
 def action_values(_activations, _theta):
-    _shape = _theta.shape
-    _val = np.zeros(_shape[1])
-    for _i in range(_shape[1]):
-        for _k in range(_shape[0]):
-            _val[_i] += _theta[_k, _i] * _activations[_k]
+    _val = np.dot(_theta.T, _activations)
     return _val
 
 
 def action_value(_activations, _action, _theta):
-    _shape = _theta.shape
-    _val = 0
-    for _k in range(_shape[0]):
-        _val += _theta[_k, _action] * _activations[_k]
+    _val = np.dot(_theta[:, _action], _activations)
     return _val
 
 
-for ep in range(20):
+for ep in range(100):
 
     e = np.zeros((num_row * num_col, num_actions))
     state = normalize_state(env.reset())
-
-    for i in range(num_row * num_col):
-        activations[i] = phi(state, i)
-
+    activations = phi(state)
     # print "activations = ", np.reshape(activations.ravel(order='F'), (num_row, num_col))
     vals = action_values(activations, theta)
     action = epsilon_greedy(epsilon, vals)
-    for t in range(1000):
+    for t in range(2000):
         env.render()
         new_state, reward, done, info = env.step(action)
         new_state = normalize_state(new_state)
-
-        for i in range(num_row * num_col):
-            new_activations[i] = phi(new_state, i)
-
+        new_activations = phi(new_state)
         new_vals = action_values(new_activations, theta)
         new_action = epsilon_greedy(epsilon, new_vals)
         Q2 = action_value(new_activations, new_action, theta)
@@ -106,21 +100,21 @@ for ep in range(20):
         delta = (reward + gamma * action_value(new_activations, new_action, theta) -
                  action_value(activations, action, theta))
 
-        for i in range(num_row * num_col):
-            # e[i, action] += activations[i]  # accumulating traces
-            e[i, action] = activations[i]  # replacing traces
-            for k in range(num_actions):
-                theta[i, k] += alpha * delta * e[i, k]
-                e[i, k] *= gamma * Lambda
+        for k in range(num_row * num_col):
+            # e[:, action] += activations  # accumulating traces
+            e[:, action] = activations  # replacing traces
+            for a in range(num_actions):
+                theta[k, a] += alpha * delta * e[k, a]
+                e[k, a] *= gamma * Lambda
 
         if t % 1 != 0:
             print "t = ", t
-            # print "new_state = ", new_state
-            # print "new_activations = ", np.reshape(new_activations.ravel(order='F'), (num_row, num_col))
-            # print "Q_current = ", Q1
-            # print "Q_future = ", Q2
-            # print "action = ", action
-            # print "delta = ", delta
+            print "new_state = ", new_state
+            print "new_activations = ", np.reshape(new_activations.ravel(order='F'), (num_row, num_col))
+            print "Q_current = ", Q1
+            print "Q_future = ", Q2
+            print "action = ", action
+            print "delta = ", delta
             print "e =", e
             print "theta = \n", np.reshape(theta.ravel(order='F'), (num_actions, num_row, num_col))
             print "---------------------------------------------------------------------------"
@@ -131,5 +125,34 @@ for ep in range(20):
         action = new_action
         if done:
             break
+
+value_left = np.zeros(num_row * num_col)
+value_nothing = np.zeros(num_row * num_col)
+value_right = np.zeros(num_row * num_col)
+
+for h in range(num_row * num_col):
+    current_activations = phi(c[h, :])
+    value_left[h] += action_value(current_activations, 0, theta)
+    value_nothing[h] += action_value(current_activations, 1, theta)
+    value_right[h] += action_value(current_activations, 2, theta)
+
+# print np.reshape(current_activations.ravel(order='F'), (num_row, num_col))
+
+plt.close('all')
+fig, axes = plt.subplots(ncols=3, sharey=True)
+plt.setp(axes.flat, aspect=1.0, adjustable='box-forced')
+im = axes[0].imshow(value_left.reshape((num_row, num_col)), cmap='hot')
+axes[0].set_title('Action = left')
+axes[0].set_ylabel('Position')
+axes[0].set_xlabel('Velocity')
+im = axes[1].imshow(value_nothing.reshape((num_row, num_col)), cmap='hot')
+axes[1].set_title('Action = nothing')
+im = axes[2].imshow(value_right.reshape((num_row, num_col)), cmap='hot')
+axes[2].set_title('Action = right')
+fig.subplots_adjust(bottom=0.2)
+cbar_ax = fig.add_axes([0.15, 0.15, 0.7, 0.05])
+cbar = fig.colorbar(im, cax=cbar_ax, orientation='horizontal')
+plt.axis([0, 1, 0, 1])
+plt.show()
 
 # env.monitor.close()
