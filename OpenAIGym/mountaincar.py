@@ -3,18 +3,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Parameters
-num_rows = 11
-num_cols = 11
+num_rows = 4
+num_cols = 4
 width = 1. / (num_rows - 1.)
 height = 1. / (num_cols - 1.)
 rbf_sigma = width / 2.
 epsilon = 0.1
 epsilon_final = 0.1
 Lambda = 0.5
-alpha = 0.5
-gamma = 0.95
-num_episodes = 200
-num_timesteps = 2000
+alpha = 0.1
+gamma = 0.99
+num_episodes = 2000
+num_timesteps = 200
 
 # Initializations
 env = gym.make('MountainCar-v0')
@@ -131,7 +131,7 @@ for ep in range(num_episodes):
         if done:
             break
 
-    ep_length = t
+    ep_length[ep] = t
     print "t = ", t
     epsilon *= epsilon_coefficient
 
@@ -163,10 +163,11 @@ fig.subplots_adjust(bottom=0.2)
 cbar_ax = fig.add_axes([0.15, 0.15, 0.7, 0.05])
 cbar = fig.colorbar(im, cax=cbar_ax, orientation='horizontal')
 plt.axis([0, 1, 0, 1])
-plt.show()
 
-fig2, ax2 = plt.plot(ep_length)
-ax2.set_title('Episode Length')
-ax2.set_ylabel('Completion Time')
-ax2.set_xlabel('Episode')
+plt.figure(2)
+plt.plot(ep_length)
+plt.title('Episode Length')
+plt.ylabel('Completion Time')
+plt.xlabel('Episode')
+plt.show()
 # env.monitor.close()
