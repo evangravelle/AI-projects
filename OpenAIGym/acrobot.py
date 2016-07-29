@@ -1,14 +1,11 @@
 # SARSA-lambda with Gaussian radial basis functions for action-value approximation
-# Implemented for the OpenAI gym mountain-car environment
+# Implemented for the OpenAI gym acrobot environment
 # Written by Evan Gravelle
 # 7/28/2016
 
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
-
-# one set which converges in around 1200 episodes
-# 4 rows, 4 cols, eps = 0.1, Lambda = 0.5, alpha = 0.008, gamma = 0.99
 
 # Parameters
 num_rows = 4
@@ -21,12 +18,12 @@ epsilon_final = 0.1
 Lambda = 0.5
 alpha = 0.008
 gamma = 0.99
-num_episodes = 2000
-num_timesteps = 200
+num_episodes = 200
+num_timesteps = 2000
 
 # Initializations
-env = gym.make('MountainCar-v0')
-# env.monitor.start('./tmp/mountain-car-1', force=True)
+env = gym.make('Acrobot-v0')
+env.monitor.start('./tmp/acrobot-1', force=True)
 num_actions = env.action_space.n
 dim = env.observation_space.high.size
 xbar = np.zeros((2, dim))
@@ -100,7 +97,7 @@ for ep in range(num_episodes):
     # Each episode
     for t in range(num_timesteps):
 
-        # env.render()
+        env.render()
         new_state, reward, done, info = env.step(action)
         new_state = normalize_state(new_state)
         new_activations = phi(new_state)
@@ -144,35 +141,10 @@ for ep in range(num_episodes):
     epsilon *= epsilon_coefficient
 
 
-value_left = np.zeros(num_ind)
-value_nothing = np.zeros(num_ind)
-value_right = np.zeros(num_ind)
-
-for h in range(num_ind):
-    current_activations = phi(c[h, :])
-    value_left[h] += action_value(current_activations, 0, theta)
-    value_nothing[h] += action_value(current_activations, 1, theta)
-    value_right[h] += action_value(current_activations, 2, theta)
-
 # print np.reshape(current_activations.ravel(order='F'), (num_rows, num_cols))
 
 plt.close('all')
-fig, axes = plt.subplots(ncols=3, sharey=True)
-plt.setp(axes.flat, aspect=1.0, adjustable='box-forced')
-im = axes[0].imshow(value_left.reshape((num_rows, num_cols)), cmap='hot')
-axes[0].set_title('Action = left')
-axes[0].set_ylabel('Position')
-axes[0].set_xlabel('Velocity')
-im = axes[1].imshow(value_nothing.reshape((num_rows, num_cols)), cmap='hot')
-axes[1].set_title('Action = nothing')
-im = axes[2].imshow(value_right.reshape((num_rows, num_cols)), cmap='hot')
-axes[2].set_title('Action = right')
-fig.subplots_adjust(bottom=0.2)
-cbar_ax = fig.add_axes([0.15, 0.15, 0.7, 0.05])
-cbar = fig.colorbar(im, cax=cbar_ax, orientation='horizontal')
-plt.axis([0, 1, 0, 1])
-
-plt.figure(2)
+plt.figure(1)
 plt.plot(ep_length)
 plt.title('Episode Length')
 plt.ylabel('Completion Time')
