@@ -7,32 +7,30 @@ import gym
 import numpy as np
 import matplotlib.pyplot as plt
 
-# one set which converges in around 1200 episodes
-# 4 rows, 4 cols, eps = 0.1, Lambda = 0.5, alpha = 0.008, gamma = 0.99
+# Initializations
+env = gym.make('MountainCar-v0')
+env.monitor.start('./tmp/mountain-car-1', force=True)
+num_actions = env.action_space.n
+dim = env.observation_space.high.size
 
 # Parameters
-num_rows = 4
-num_cols = 4
-width = 1. / (num_rows - 1.)
-height = 1. / (num_cols - 1.)
-rbf_sigma = width / 2.
+# one set which converges in around 1200 episodes
+# 4 rows, 4 cols, eps = 0.1, Lambda = 0.5, alpha = 0.008, gamma = 0.99
+num_rbf = 4 * np.ones(num_actions).astype(int)
+width = 1. / (num_rbf - 1.)
+rbf_sigma = width[0] / 2.
 epsilon = 0.1
 epsilon_final = 0.1
 Lambda = 0.5
-alpha = 0.008
+alpha = 0.01
 gamma = 0.99
 num_episodes = 2000
 num_timesteps = 200
 
-# Initializations
-env = gym.make('MountainCar-v0')
-# env.monitor.start('./tmp/mountain-car-1', force=True)
-num_actions = env.action_space.n
-dim = env.observation_space.high.size
 xbar = np.zeros((2, dim))
 xbar[0, :] = env.observation_space.low
 xbar[1, :] = env.observation_space.high
-num_ind = num_rows * num_cols
+num_ind = np.prod(num_rbf)
 activations = np.zeros(num_ind)
 new_activations = np.zeros(num_ind)
 theta = np.zeros((num_ind, num_actions))
@@ -44,9 +42,9 @@ np.set_printoptions(precision=2)
 
 # Construct ndarray of rbf centers
 c = np.zeros((num_ind, dim))
-for i in range(num_rows):
-    for j in range(num_cols):
-        c[i*num_cols + j, :] = (i * height, j * width)
+for i in range(num_rbf[0]):
+    for j in range(num_rbf[1]):
+        c[i*num_rbf[1] + j, :] = (i * width[1], j * width[0])
 
 
 # Returns the state scaled between 0 and 1
@@ -148,24 +146,23 @@ value_left = np.zeros(num_ind)
 value_nothing = np.zeros(num_ind)
 value_right = np.zeros(num_ind)
 
+# Display each action-value as a heatmap
 for h in range(num_ind):
     current_activations = phi(c[h, :])
     value_left[h] += action_value(current_activations, 0, theta)
     value_nothing[h] += action_value(current_activations, 1, theta)
     value_right[h] += action_value(current_activations, 2, theta)
 
-# print np.reshape(current_activations.ravel(order='F'), (num_rows, num_cols))
-
 plt.close('all')
 fig, axes = plt.subplots(ncols=3, sharey=True)
 plt.setp(axes.flat, aspect=1.0, adjustable='box-forced')
-im = axes[0].imshow(value_left.reshape((num_rows, num_cols)), cmap='hot')
+im = axes[0].imshow(value_left.reshape((num_rbf[0], num_rbf[1])), cmap='hot')
 axes[0].set_title('Action = left')
 axes[0].set_ylabel('Position')
 axes[0].set_xlabel('Velocity')
-im = axes[1].imshow(value_nothing.reshape((num_rows, num_cols)), cmap='hot')
+im = axes[1].imshow(value_nothing.reshape((num_rbf[0], num_rbf[1])), cmap='hot')
 axes[1].set_title('Action = nothing')
-im = axes[2].imshow(value_right.reshape((num_rows, num_cols)), cmap='hot')
+im = axes[2].imshow(value_right.reshape((num_rbf[0], num_rbf[1])), cmap='hot')
 axes[2].set_title('Action = right')
 fig.subplots_adjust(bottom=0.2)
 cbar_ax = fig.add_axes([0.15, 0.15, 0.7, 0.05])
@@ -178,4 +175,4 @@ plt.title('Episode Length')
 plt.ylabel('Completion Time')
 plt.xlabel('Episode')
 plt.show()
-# env.monitor.close()
+env.monitor.close()

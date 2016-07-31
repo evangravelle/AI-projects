@@ -7,12 +7,16 @@ import gym
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Initializations
+env = gym.make('Acrobot-v0')
+env.monitor.start('./tmp/acrobot-1', force=True)
+num_actions = env.action_space.n
+dim = env.observation_space.high.size
+
 # Parameters
-num_rows = 4
-num_cols = 4
-width = 1. / (num_rows - 1.)
-height = 1. / (num_cols - 1.)
-rbf_sigma = width / 2.
+num_rbf = 4 * np.ones(num_actions).astype(int)
+width = 1. / (num_rbf - 1.)
+rbf_sigma = width[0] / 2.
 epsilon = 0.1
 epsilon_final = 0.1
 Lambda = 0.5
@@ -21,15 +25,10 @@ gamma = 0.99
 num_episodes = 200
 num_timesteps = 2000
 
-# Initializations
-env = gym.make('Acrobot-v0')
-env.monitor.start('./tmp/acrobot-1', force=True)
-num_actions = env.action_space.n
-dim = env.observation_space.high.size
 xbar = np.zeros((2, dim))
 xbar[0, :] = env.observation_space.low
 xbar[1, :] = env.observation_space.high
-num_ind = num_rows * num_cols
+num_ind = np.prod(num_rbf)
 activations = np.zeros(num_ind)
 new_activations = np.zeros(num_ind)
 theta = np.zeros((num_ind, num_actions))
@@ -39,11 +38,11 @@ ep_length = np.zeros(num_episodes)
 np.set_printoptions(precision=2)
 
 
-# Construct ndarray of rbf centers
+# Construct ndarray of rbf centers THIS IS WRONG RIGHT NOW
 c = np.zeros((num_ind, dim))
-for i in range(num_rows):
-    for j in range(num_cols):
-        c[i*num_cols + j, :] = (i * height, j * width)
+for i in range(num_rbf[0]):
+    for j in range(num_rbf[1]):
+        c[i*num_rbf[1] + j, :] = (i * width[1], j * width[0])
 
 
 # Returns the state scaled between 0 and 1
