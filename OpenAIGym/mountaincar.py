@@ -16,7 +16,7 @@ dim = env.observation_space.high.size
 # Parameters
 # one set which converges in around 1200 episodes
 # 4 rows, 4 cols, eps = 0.1, Lambda = 0.5, alpha = 0.008, gamma = 0.99
-num_rbf = 4 * np.ones(num_actions).astype(int)
+num_rbf = 4 * np.ones(dim).astype(int)
 width = 1. / (num_rbf - 1.)
 rbf_sigma = width[0] / 2.
 epsilon = 0.1

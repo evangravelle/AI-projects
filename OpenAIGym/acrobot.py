@@ -14,16 +14,17 @@ num_actions = env.action_space.n
 dim = env.observation_space.high.size
 
 # Parameters
-num_rbf = 4 * np.ones(num_actions).astype(int)
+discrt = 4
+num_rbf = discrt * np.ones(dim).astype(int)
 width = 1. / (num_rbf - 1.)
 rbf_sigma = width[0] / 2.
 epsilon = 0.1
 epsilon_final = 0.1
 Lambda = 0.5
-alpha = 0.008
+alpha = 0.012
 gamma = 0.99
-num_episodes = 200
-num_timesteps = 2000
+num_episodes = 1000
+num_timesteps = 200
 
 xbar = np.zeros((2, dim))
 xbar[0, :] = env.observation_space.low
@@ -38,11 +39,16 @@ ep_length = np.zeros(num_episodes)
 np.set_printoptions(precision=2)
 
 
-# Construct ndarray of rbf centers THIS IS WRONG RIGHT NOW
+# Construct ndarray of rbf centers
 c = np.zeros((num_ind, dim))
-for i in range(num_rbf[0]):
-    for j in range(num_rbf[1]):
-        c[i*num_rbf[1] + j, :] = (i * width[1], j * width[0])
+for i in range(num_ind):
+    if i == 0:
+        pad_num = dim
+    else:
+        pad_num = dim - int(np.log(i) / np.log(discrt)) - 1
+    ind = np.base_repr(i, base=discrt, padding=pad_num)
+    ind = np.asarray([float(j) for j in list(ind)])
+    c[i, :] = width * ind
 
 
 # Returns the state scaled between 0 and 1
@@ -136,11 +142,8 @@ for ep in range(num_episodes):
             break
 
     ep_length[ep] = t
-    # print "t = ", t
     epsilon *= epsilon_coefficient
 
-
-# print np.reshape(current_activations.ravel(order='F'), (num_rows, num_cols))
 
 plt.close('all')
 plt.figure(1)
@@ -149,4 +152,4 @@ plt.title('Episode Length')
 plt.ylabel('Completion Time')
 plt.xlabel('Episode')
 plt.show()
-# env.monitor.close()
+env.monitor.close()
