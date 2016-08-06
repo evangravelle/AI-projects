@@ -3,6 +3,11 @@
 # Written by Evan Gravelle
 # 7/28/2016
 
+# A car is on a one-dimensional track, positioned between two "mountains". The goal
+# is to drive up the mountain on the right; however, the cars engine is not strong
+# enough to scale the mountain in a single pass. Therefore, the only way to succeed
+# is to drive back and forth to build up momentum.
+
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
