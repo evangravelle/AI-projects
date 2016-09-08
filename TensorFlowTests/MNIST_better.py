@@ -76,4 +76,4 @@ print "test_accuracy %g" % accuracy.eval(feed_dict={x: mnist.test.images, y_: mn
 print start_time
 print end_time
 
-# 2000 iterations, 1024 neurons in last hidden layer, took approx 47 minutes to run on Ubuntu VBox, 99.3% accurate
+# 20000 iterations, 1024 neurons in last hidden layer, took approx 47 minutes to run on Ubuntu VBox, 99.3% accurate
