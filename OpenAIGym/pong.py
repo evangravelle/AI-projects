@@ -67,25 +67,29 @@ a = tf.placeholder(tf.uint8, shape=[None])
 r = tf.placeholder(tf.float32, shape=[None])
 nt = tf.placeholder(tf.float32, shape=[None])  # indicates if a state is not terminal
 
-# First layer is max pooling to reduce the image to 105x80
+# First layer is max pooling to reduce the image to (?, 105, 80, 1)
 s_image = tf.reshape(s, [-1, num_rows, num_cols, 1])
 h_pool0 = -tf.nn.max_pool(-s_image, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+print h_pool0
 
-# Second layer is 16 8x8 convolutions followed by ReLU
+# Second layer is 16 8x8 convolutions followed by ReLU (?, 27, 20, 16)
 W_conv1 = tf.Variable(tf.truncated_normal([8, 8, 1, 16], mean=0.0, stddev=0.1))
 b_conv1 = tf.Variable(tf.constant(0.1, shape=[16]))
 h_conv1 = tf.nn.relu(tf.nn.conv2d(h_pool0, W_conv1, strides=[1, 4, 4, 1], padding='SAME') + b_conv1)
+print h_conv1
 
-# Third layer is 32 4x4 convolutions followed by ReLU
+# Third layer is 32 4x4 convolutions followed by ReLU (?, 14, 10, 32)
 W_conv2 = tf.Variable(tf.truncated_normal([4, 4, 16, 32], mean=0.0, stddev=0.1))
 b_conv2 = tf.Variable(tf.constant(0.1, shape=[32]))
 h_conv2 = tf.nn.relu(tf.nn.conv2d(h_conv1, W_conv2, strides=[1, 2, 2, 1], padding='SAME') + b_conv2)
+print h_conv2
 
 # Fourth layer is fully connected layer followed by ReLU, with arbitrary choice of 256 neurons
-W_fc1 = tf.Variable(tf.truncated_normal([input_size * 32, 256], mean=0.0, stddev=0.1))
+W_fc1 = tf.Variable(tf.truncated_normal([14 * 10 * 32, 256], mean=0.0, stddev=0.1))
 b_fc1 = tf.Variable(tf.constant(0.1, shape=[256]))
-h_conv2_flat = tf.reshape(h_conv2, [-1, input_size * 32])
+h_conv2_flat = tf.reshape(h_conv2, [-1, 14 * 10 * 32])
 h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1) + b_fc1)
+print h_fc1
 
 # Fifth layer is output with dropout
 # keep_prob = tf.placeholder(tf.float32)
@@ -120,7 +124,7 @@ for ep in range(num_episodes):
     obs_diff = obs_reduced - reduce_image(prev_obs)
 
     for t in range(1, num_timesteps):
-        Q_vals = sess.run(Q_vals, feed_dict={s: obs_diff.reshape((1, -1))})
+        sess.run(Q_vals, feed_dict={s: obs_diff.reshape((1, -1))})
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
 
@@ -130,12 +134,15 @@ for ep in range(num_episodes):
         env.render()
         obs_diff = obs_reduced - prev_obs_reduced
         replay_ind = t - 1 % memory_cap
-        print obs_diff
+        plt.imshow(obs_diff, cmap='Greys', interpolation='nearest')
         if done:
             not_terminal[replay_ind] = 0
-        replay_memory[replay_ind, :] = [prev_obs_diff, action, reward, obs_diff]
+        replay_memory[replay_ind, :] = np.concatenate((prev_obs_diff.reshape(-1),
+                                                       (action,), (reward,), obs_diff.reshape(-1)))
         current_batch_size = min([t, batch_size])
         current_replay_max = min([t - 1, memory_cap])
+
+        # Error here
         current_replays = random.sample(set(xrange(current_replay_max)), current_batch_size)
         sess.run(y, feed_dict={s: replay_memory[current_replays[0:input_size - 1]],
                                a: replay_memory[current_replays[input_size]],
