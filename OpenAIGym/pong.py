@@ -7,8 +7,6 @@
 # shape (210, 160, 3) Each action is repeatedly performed for a duration
 # of k frames, where k is uniformly sampled from {2,3,4}
 
-# Needs mini-batches and action holding, 4 frames is probably fine
-
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
@@ -63,7 +61,7 @@ sess = tf.InteractiveSession()
 
 # x is training input, y_ is training output, these must be fed in later
 s = tf.placeholder(tf.float32, shape=[None, num_rows*num_cols])  # 1st dim is batch size
-a = tf.placeholder(tf.uint8, shape=[None])
+a = tf.placeholder(tf.int32, shape=[None])
 r = tf.placeholder(tf.float32, shape=[None])
 nt = tf.placeholder(tf.float32, shape=[None])  # indicates if a state is not terminal
 
@@ -102,11 +100,9 @@ Q_vals = tf.matmul(h_fc1, W_fc2) + b_fc2
 y = r + gamma * tf.reduce_max(Q_vals, reduction_indices=[1]) * nt
 
 # Loss function is average mean squared error over mini-batch
-loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.one_hot(a, 1))) ** 2)
+loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.one_hot(a, num_actions))) ** 2)
 train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 # train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
-# correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
-# accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 sess.run(tf.initialize_all_variables())
 
 start_time = datetime.datetime.now().time()
@@ -128,7 +124,9 @@ for ep in range(num_episodes):
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
 
-        action = epsilon_greedy(epsilon, Q_vals)
+        if t % 4 == 0:
+            action = epsilon_greedy(epsilon, Q_vals)
+
         obs, reward, done, info = env.step(action)
         obs_reduced = reduce_image(obs)
         env.render()
@@ -153,6 +151,7 @@ for ep in range(num_episodes):
 
         if done:
             break
+        prev_action = action[:]
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
 
