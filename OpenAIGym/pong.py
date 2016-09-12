@@ -62,8 +62,14 @@ sess = tf.InteractiveSession()
 # x is training input, y_ is training output, these must be fed in later
 s = tf.placeholder(tf.float32, shape=[None, num_rows*num_cols])  # 1st dim is batch size
 a = tf.placeholder(tf.int32, shape=[None])
-r = tf.placeholder(tf.float32, shape=[None])
-nt = tf.placeholder(tf.float32, shape=[None])  # indicates if a state is not terminal
+# r = tf.placeholder(tf.float32, shape=[None])
+# nt = tf.placeholder(tf.float32, shape=[None])  # indicates if a state is not terminal
+y = tf.placeholder(tf.float32, shape=[None])
+print "s = ", s
+print "a = ", a
+# print "r = ", r
+# print "nt = ", nt
+print "y = ", y
 
 # First layer is max pooling to reduce the image to (?, 105, 80, 1)
 s_image = tf.reshape(s, [-1, num_rows, num_cols, 1])
@@ -96,12 +102,12 @@ W_fc2 = tf.Variable(tf.truncated_normal([256, num_actions], mean=0.0, stddev=0.1
 b_fc2 = tf.Variable(tf.constant(0.1, shape=[num_actions]))
 Q_vals = tf.matmul(h_fc1, W_fc2) + b_fc2
 print "Q_vals = ", Q_vals
-
-# Define target y
-y = r + gamma * tf.reduce_max(Q_vals, reduction_indices=[1]) * nt
+print "TEST = ", tf.one_hot((1, 2), num_actions)
 
 # Loss function is average mean squared error over mini-batch
-loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.one_hot(a, num_actions))) ** 2)
+loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_actions)))) ** 2)
+print "one_hot = ", tf.one_hot(num_actions, a)
+
 train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 # train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 sess.run(tf.initialize_all_variables())
@@ -121,38 +127,52 @@ for ep in range(num_episodes):
     obs_diff = obs_reduced - reduce_image(prev_obs)
 
     for t in range(1, num_timesteps):
-        sess.run(Q_vals, feed_dict={s: obs_diff.reshape((1, -1))})
+        print "t = ", t
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
+        prev_Q_vals_arr = sess.run(Q_vals, feed_dict={s: prev_obs_diff.reshape((1, -1))})
+        if t % 100 == 0:
+            print "Q_vals", prev_Q_vals_arr
 
         if t % 4 == 0:
-            action = epsilon_greedy(epsilon, Q_vals)
+            action = epsilon_greedy(epsilon, prev_Q_vals_arr)
 
         obs, reward, done, info = env.step(action)
         obs_reduced = reduce_image(obs)
         # env.render()
         obs_diff = obs_reduced - prev_obs_reduced
         replay_ind = t - 1 % memory_cap
+        print "replay_ind = ", replay_ind
         plt.imshow(obs_diff, cmap='Greys', interpolation='nearest')
         if done:
             not_terminal[replay_ind] = 0
-        replay_memory[replay_ind, :] = np.concatenate((prev_obs_diff.reshape(-1),
-                                                       (action,), (reward,), obs_diff.reshape(-1)))
-        current_batch_size = min([t, batch_size])
-        current_replay_max = min([t, memory_cap])
 
-        # Error here
-        current_replays = random.sample(xrange(current_replay_max), current_batch_size)
-        sess.run(y, feed_dict={s: replay_memory[current_replays[0:input_size - 1]],
-                               a: replay_memory[current_replays[input_size]],
-                               r: replay_memory[current_replays[input_size + 1]],
-                               nt: not_terminal[current_replays]})
-        train_step.run(feed_dict={s: replay_memory[current_replays[input_size + 2:]],
-                                  a: replay_memory[current_replays[input_size]]})
+        replay_memory[replay_ind, :] = np.concatenate((prev_obs_diff.reshape(-1),
+          (action,), (reward,), obs_diff.reshape(-1)))
+        print "replay_memory.size() = ", np.shape(replay_memory)
+        current_batch_size = min([t, batch_size])
+        print "current_batch_size = ", current_batch_size
+        current_replay_length = min([t, memory_cap])
+        print "current_replay_length = ", current_replay_length
+
+        current_replays = random.sample(xrange(current_replay_length), current_batch_size)
+        print "current_replays = ", current_replays
+
+        # currently inefficient implementation, consider using partial_run (experimental)
+        # intermediate tensors are freed at the end of a sess.run()
+        Q_vals_arr = sess.run(Q_vals, feed_dict={s: replay_memory[current_replays, input_size + 2:]})
+        r = replay_memory[current_replays, input_size + 1]
+        nt = not_terminal[current_replays]
+        target = r + gamma * np.amax(Q_vals_arr, axis=1) * nt
+        print "target size = ", np.shape(target)
+
+        train_step.run(feed_dict={s: replay_memory[current_replays, 0:input_size],
+                                  a: replay_memory[current_replays, input_size],
+                                  y: target})
 
         if done:
             break
-        prev_action = action[:]
+        prev_action = action
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
 
