@@ -7,6 +7,10 @@
 # shape (210, 160, 3) Each action is repeatedly performed for a duration
 # of k frames, where k is uniformly sampled from {2,3,4}
 
+# An episode ends once one player has 20 points
+# DQN paper trains for 10 million frames, with epsilon linearly annealed
+# from 1 to 0.1 in first million frames, then held constant
+
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,8 +36,8 @@ gamma = 0.99
 # Parameters
 epsilon = 1
 epsilon_final = 0.1
-num_episodes = 10
-num_timesteps = 10000
+num_episodes = 50
+num_timesteps = 2000
 batch_size = 32
 
 
@@ -106,8 +110,8 @@ Q_vals = tf.matmul(h_fc1, W_fc2) + b_fc2
 loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_actions)))) ** 2)
 # print "one_hot = ", tf.transpose(tf.one_hot(num_actions, a))
 
-train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
-# train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
+# train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
+train_step = tf.train.AdamOptimizer().minimize(loss)
 sess.run(tf.initialize_all_variables())
 
 start_time = datetime.datetime.now().time()
@@ -124,7 +128,7 @@ for ep in range(num_episodes):
     obs_diff = obs_reduced - reduce_image(prev_obs)
 
     for t in range(1, num_timesteps):
-        if t % 1000 == 0:
+        if t % 100 == 0:
             print "t = ", t
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
@@ -138,7 +142,7 @@ for ep in range(num_episodes):
         obs_reduced = reduce_image(obs)
         # env.render()
         obs_diff = obs_reduced - prev_obs_reduced
-        replay_ind = t - 1 % memory_cap
+        replay_ind = (t - 1) % (memory_cap - 1)
         # print "replay_ind = ", replay_ind
         if False:
             plt.imshow(obs_reduced, cmap='Greys', interpolation='nearest')
@@ -146,7 +150,6 @@ for ep in range(num_episodes):
 
         if done:
             not_terminal[replay_ind] = 0
-
         replay_memory[replay_ind, :] = np.concatenate((prev_obs_diff.reshape(-1),
           (action,), (reward,), obs_diff.reshape(-1)))
         # print "replay_memory.size() = ", np.shape(replay_memory)
@@ -178,8 +181,9 @@ for ep in range(num_episodes):
 
     ep_length[ep] = t
     epsilon *= epsilon_coefficient
-    plt.imshow(obs_reduced, cmap='Greys', interpolation='nearest')
-    plt.show()
+    # plt.imshow(obs, interpolation='nearest')
+    im_str = "pong_scores/score%d" % ep
+    plt.imsave(fname=im_str, arr=obs, format='png')
 
 end_time = datetime.datetime.now().time()
 # plt.hist(rescaled_obs.ravel(), bins=256, range=(0.0, 1.0), fc='k', ec='k')

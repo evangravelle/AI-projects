@@ -1,2 +1,1 @@
-from gym import envs
-print(envs.registry.all())
+print range(1, 3)
