@@ -31,14 +31,15 @@ memory_cap = 1000
 replay_memory = np.zeros((memory_cap, input_size + 1 + 1 + input_size))
 not_terminal = np.ones(memory_cap, dtype=int)
 replay_count = 0
-gamma = 0.99
+total_iter = 0
 
 # Parameters
 epsilon = 1
 epsilon_final = 0.1
-num_episodes = 50
+num_episodes = 100
 num_timesteps = 2000
 batch_size = 32
+gamma = 0.99
 
 
 # Returns cropped BW image of play area
@@ -118,6 +119,7 @@ start_time = datetime.datetime.now().time()
 
 # Training loop
 for ep in range(num_episodes):
+    print "episode ", ep
     prev_obs = env.reset()
 
     # Take a random action at first time step
@@ -128,8 +130,6 @@ for ep in range(num_episodes):
     obs_diff = obs_reduced - reduce_image(prev_obs)
 
     for t in range(1, num_timesteps):
-        if t % 100 == 0:
-            print "t = ", t
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
         prev_Q_vals_arr = sess.run(Q_vals, feed_dict={s: prev_obs_diff.reshape((1, -1))})
@@ -180,12 +180,14 @@ for ep in range(num_episodes):
         prev_obs_diff = obs_diff[:]
 
     ep_length[ep] = t
+    total_iter += t
     epsilon *= epsilon_coefficient
     # plt.imshow(obs, interpolation='nearest')
     im_str = "pong_scores/score%d" % ep
     plt.imsave(fname=im_str, arr=obs, format='png')
 
 end_time = datetime.datetime.now().time()
+sess.close()
 # plt.hist(rescaled_obs.ravel(), bins=256, range=(0.0, 1.0), fc='k', ec='k')
 # plt.show()
 # env.monitor.close()
