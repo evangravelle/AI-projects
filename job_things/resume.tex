@@ -1,0 +1,286 @@
+% LaTeX resume using res.cls
+\documentclass{res} 
+%\usepackage{helvetica} % uses helvetica postscript font (download helvetica.sty)
+%\usepackage{newcent}   % uses new century schoolbook postscript font 
+%\setlength{\parindent}{-10pt} % Default is 15pt.
+
+\addtolength{\oddsidemargin}{-.2in}
+\addtolength{\evensidemargin}{-.2in}
+
+\begin{document}
+
+\name{Evan Gravelle, Ph.D. Candidate} 
+% \address used twice to have two lines of address
+\address{evangravelle@gmail.com $\cdot$ (805) 205-4318 $\cdot$ github/evangravelle}
+%\address{}
+
+ 
+\begin{resume}
+
+%\section{CONTACT}% INFORMATION} 
+%\vspace{-7ex}
+%\hspace{-13mm}
+%\begin{minipage}{.45\linewidth} 
+%{\footnotesize 
+%\vspace{5ex}
+%michael.ouimet@navy.mil 
+%
+%San Diego, CA 92109}
+%}
+%\end{minipage} 
+%\hspace*{75 mm} 
+%\begin{minipage}{.45\linewidth} 
+%\vspace{5ex}
+% {\footnotesize
+% (860) 384-3216
+%
+%}
+% \end{minipage}
+
+ \vspace*{-2ex}
+\hspace{-8.5ex}\rule{16.5cm}{0.4pt}
+ \vspace*{-3ex}
+\section{SUMMARY}
+\vspace{1ex}
+Mechanical engineer with interdisciplinary research experience in control and estimation theory, robotics, and machine learning. Extensive experience in programming (C++, Python, MATLAB, ROS), mathematical modeling, and analysis, with a passion for artificial intelligence. 
+
+\vspace*{-3ex}
+\hspace{-8.5ex}\rule{16.5cm}{0.4pt}
+ \vspace*{-3ex}
+\section{EDUCATION} 
+\vspace{1ex}
+\textbf{University of California, San Diego}, California, USA  \\
+\vspace{0ex}
+\quad Ph.D., Mechanical and Aerospace Engineering, cum. GPA: 3.78 \hfill expected March 2017 \\
+\vspace{0ex}
+\qquad - Advisor: Sonia Mart\'inez \\
+\vspace{0ex}
+\qquad - Thesis title: Distributed Load Balancing Algorithms under Discrete Constraints \\
+\vspace{.5ex}
+\quad M.S., Mechanical and Aerospace Engineering, cum. GPA: 3.75 \hfill September 2013 \\
+%
+\vspace*{.5ex}
+\textbf{University of California, Santa Barbara}, California, USA \\
+\vspace*{.5ex}
+\quad B.S., Mechanical Engineering, cum. GPA: 3.87, \textit{summa cum laude}, first in class \hfill June 2012 \\
+
+ \vspace*{-6ex}
+\hspace{-8.5ex}\rule{16.5cm}{0.4pt}
+ \vspace*{-3ex}
+\section{PROFESSIONAL EXPERIENCE}
+\vspace{1ex}
+{\sl \bf Lab Lead for Multi-Agent Robotics Lab (http://muro.ucsd.edu)} \hfill June 2015 - present 
+\vspace*{.5ex}
+\begin{itemize}
+\item Led undergraduate and graduate researchers in individual projects towards developing capabilities of lab's ground and air robot testbed, helped determine and direct the long-term focus of the testbed. 
+\vspace*{-.5ex}
+\item Helped successfully implement various algorithms on ground robots (Turtlebot) and quadrotors (Parrot AR.Drone) using Robot Operating System (ROS) including centralized and decentralized multi-agent deployment using Voronoi iteration, centralized and decentralized localization using an overhead camera with ArUco markers, tuned PID motion controllers, cyclic pursuit, simultaneous localization and mapping, and human-swarm interaction via an Android app.
+\vspace*{-.5ex}
+\item Achieved first place with team in graduate ROS course competition by solving an autonomous retrieval task using computer vision techniques for identification and tracking, ceiling template matching for localization, waypoint heuristic method for motion planning, PID control for base/arm motion and obstacle avoidance, and a state-based outer loop controller to monitor and change behavior modes.
+\end{itemize}
+\vspace*{-1ex}
+{\sl  \bf Graduate Student Researcher at UC San Diego} \hfill August 2012 - present
+\vspace*{.5ex}
+\begin{itemize}
+\item Designed various distributed algorithms related to load balancing under discrete constraints.
+\vspace*{-.5ex}
+\item Designed, proved convergence properties, and analyzed performance of a quantized load balancing algorithm. Designed, proved convergence properties, and analyzed performance of a dynamic lane reversal algorithm and rerouting algorithm for a vehicular road network. 
+\vspace*{-.5ex}
+\item Simulated and tested each algorithm in MATLAB, including both macroscopic and microscopic traffic models.
+\vspace*{-.5ex}
+\item Current work is on an efficient dynamic intersection control policy for the city of San Diego.
+\end{itemize}
+\vspace*{-1ex}
+{\sl \bf Research Intern at SPAWAR Systems Center Pacific } \hfill June 2016 - August 2016 
+\begin{itemize}
+\item Researched underwater localization techniques for autonomous underwater vehicles using sparse single range measurements. 
+\vspace*{-.5ex}
+\item Implemented an Unscented Kalman Filter and an Extended Kalman Filter in C++ using MOOS-IvP publish/subscribe architecture for accurate and efficient estimation, tested in simulation, presented a poster.
+\vspace*{-.5ex}
+% \item Participated in long-term planning for a Human-Autonomy Teaming project.
+\end{itemize}
+\vspace*{-1ex}
+\clearpage
+{\sl \bf Machine Learning Side Project} \hfill March 2016 - August 2016 
+\vspace*{.5ex}
+\begin{itemize}
+\item Extensive online coursework and reading on Markov decision processes, support vector machines, policy/value based reinforcement learning, TD($\lambda$), SARSA($\lambda$), Q-learning, neural networks, tree search, and deep Q-networks.
+\vspace*{-.5ex}
+\item Implemented value iteration, policy iteration, expectation-maximization, and SARSA($\lambda$) for various OpenAI Gym environments. 
+\vspace*{-.5ex}
+\item Currently working on implementing deep Q-networks for solving DOOM.
+\end{itemize}
+\vspace*{-1ex}
+{\sl \bf Research Assistant at Trinity College Dublin} \hfill June 2011 - August 2011
+\vspace*{.5ex}
+\begin{itemize}
+\item Researched the packing structure of mono-disperse microbubbles in cylinders as a function of the bubble diameter to cylinder diameter ratio. Wrote MATLAB code for visualization of these bubbles as images of 3D structures and helped characterize the packing structure, presented a poster.
+\end{itemize}
+\vspace*{-1ex}
+{\sl \bf Teaching Assistant for Probability and Statistical Methods} \hfill Spring 2014, Spring 2015
+\vspace*{.5ex}
+\begin{itemize}
+\item Tasks included weekly supplemental lectures, office hours, revising homeworks/tests, grading midterms, and holding review sessions.
+\end{itemize}
+\vspace*{-1ex}
+{\sl \bf Campus Learning Assistance Services Tutor} \hfill September 2010 - June 2012
+\vspace*{.5ex}
+\begin{itemize}
+\item Group and individual tutor for calculus and differential equations at University of California, Santa Barbara. Held classes which involved clarifying lecture material and demonstrating proper mathematical techniques for solving problems.
+\end{itemize}
+\vspace*{0ex}
+ \vspace*{-3ex}
+\hspace{-8.5ex}\rule{16.5cm}{0.4pt}
+ \vspace*{-3ex}
+
+\section{ADDITIONAL INFORMATION}
+\vspace{3ex}
+\begin{itemize}
+\item Proficient in C++, Python, MATLAB, ROS, comfortable with git, subversion, LaTeX, Linux, OS-X, Windows.
+\item Led lab outreach tours for high school and university groups to inspire students to join STEM fields and consider careers in robotics/research.
+\end{itemize}
+
+
+\vspace*{-3ex}
+%\section{QUALIFICATIONS}
+%\begin{description}
+%\item[Dynamic systems and control courses:] Linear and nonlinear
+%  systems theory, Linear and nonlinear control, Adaptive Control,
+%  Hybrid systems, Optimal control, Optimal estimation, Cooperative control, Stochastic
+%  processes, Robot motion planning 
+%\item[Algorithm design:]  Strong research experience in the design, simulation, and rigorous analysis of algorithms for correctness, time complexity, and robustness performance. 
+%\item[Programming experience:] Exceptional at MATLAB, proficient in
+%  Mathematica, familiar with Python
+%\end{description}
+%\vspace*{-3ex}
+%\section{RESEARCH PROJECT INVOLVEMENT}
+%%\\
+%{\it Implementing distributed algorithms on a multi-agent robotic platform} - Jan. 2014 - Present \\
+%\vspace{-2ex}
+%\begin{itemize}
+%\item Currently helping to manage and organize Dr. Cortes' and Dr. Martinez's joint robotic lab, including leading weekly meetings and supervising all undergraduate/Masters students (currently 4 direct reports)
+%\item The team is working towards implementing distributed motion coordination and estimation algorithms(deployment, cyclic pursuit, leader following, SLAM) on a team of 10 Turtlebots
+%\end{itemize}
+%\vspace{-2ex}
+%{\it Distributed Ocean Monitoring via Integrated Data Analysis of Coordinated Buoyancy Drogues}, NSF - Division of Ocean Sciences (OCE-0941692) - Sep. 2010 - Mar. 2014  \\
+%\vspace{-2ex}
+%\begin{itemize}
+%\item Collaborative research project between UCSD control theorists and Scripps Institute of Oceanography ocean scientists to estimate ocean phenomena
+%\item  Developed novel algorithms to be run on data collected by Scripps scientists' mobile robotic sensors
+%\item Tested their efficacy by applying the algorithms to real collected data
+%\end{itemize}
+%\vspace{-4ex}
+
+\hspace{-8.5ex}\rule{16.5cm}{0.4pt}
+ \vspace*{-3ex}
+\section{PUBLICATIONS} 
+\vspace{1ex}
+E. Gravelle and S. Mart{\'i}nez. \textit{Distributed Dynamic Lane Reversal and Rerouting for Traffic Delay Reduction}. Submitted May 2016 to Automatica.\\
+
+\vspace*{-4ex}
+
+E. Gravelle and S. Mart{\'i}nez. \textit{Traffic Delay Reduction via Distributed Dynamic Lane Reversal and Rerouting}. 22nd International Symposium on Mathematical Theory of Networks and Systems, July 2016.\\
+
+\vspace*{-4ex}
+
+E. Gravelle and S. Mart{\'i}nez. \textit{An Anytime Distributed Load Balancing Algorithm Satisfying Capacity and Quantization Constraints}. IEEE Transactions on Control of Networked Systems, November 2015. \\
+
+\vspace*{-4ex}
+
+E. Gravelle and S. Mart{\'i}nez. \textit{Quantized Distributed Load Balancing with Capacity Constraints}. IEEE Conference on Decision and Control, December 2014. \\
+
+ \vspace*{-6ex}
+\hspace{-8.5ex}\rule{16.5cm}{0.4pt}
+ \vspace*{-3ex}
+
+%\section{LEADERSHIP}
+%{\sl Mentored undergraduate students} \hfill Summer 2012, Fall 2012, Spring 2013, Winter 2014, Spring 2014 \\
+%%{\sl Adam Durbin} \hfill Fall 2012 \\
+%%{\sl Ethan Allen} \hfill Summer 2012 \\
+% -designed quarter-length research projects on the topic of `Computing and employing Voronoi Diagrams for applications in mobile sensor networks' and advised the students through mentorship
+%\\
+%-currently supervising three undergraduate researchers working on two robot localization projects, whose goals are to implement two different methods for our robotic network to gain position information (GPS via a webcam's vision and Simultaneous Localization And Mapping (SLAM))
+%
+% {\sl Teaching Assistant} \hfill Fall 2009, Fall 2011 \\
+%                MAE 140 - Linear Circuits, UCSD  \\
+%-for a 200 student class, I ran small group office hours, led large discussion sections, and graded homework and exams
+
+%\vspace*{-2ex}
+%\hspace{-8.5ex}\rule{16.5cm}{0.4pt}
+ %\vspace*{-3ex}
+%\section{AWARDS AND HONORS} 
+%\vspace{0ex}
+%Invited speaker to UC Irvine Mechanical Engineering department, April 2016 \\
+%\vspace*{-4.5ex}
+
+%Nominated for Outstanding Contribution award for Transactions on Control Systems Technology \\
+%\vspace*{-4.5ex}
+
+%Honorable mention at the UCSD Engineering Research Expo, 2014
+
+%\vspace*{-3ex}
+
+ %\vspace*{-2ex}
+%\hspace{-8.5ex}\rule{16.5cm}{0.4pt}
+ %\vspace*{-3ex}
+%\section{TALKS AND POSTERS DELIVERED} 
+%\vspace{0ex}
+%Conference on Multisensor Fusion and Integration for Intelligent Systems, San Diego, CA, 2015\\
+%\vspace*{-4.5ex}
+%
+%IEEE Conference on Decision and Control 2014, Los Angeles, CA, 2014 \\
+%\vspace*{-4.5ex}
+%
+%American Control Conference, 2014, Portland, OR, 2014\\
+%\vspace*{-4.5ex}
+%
+%Engineering Research Expo, University of California, San Diego, CA, 2014 - Honorable mention \\
+%\vspace*{-4.5ex}
+%
+%26th Southern California Nonlinear Controls Workshop, University of California, Santa Barbara, 2014\\
+%\vspace*{-4.5ex}
+%
+%SIAM Conference for Control and its Applications, San Diego, CA, 2013, invited speaker for minisymposium on `Marine Robotic Controls'\\
+%\vspace*{-4.5ex}
+%
+%Engineering Research Expo, University of California, San Diego, CA, 2013 \\
+%\vspace*{-4.5ex}
+%
+%IEEE Conference on Decision and Control 2012, Maui, HI, 2012 \\
+%\vspace{-4.5ex}
+%
+%22nd Southern California Nonlinear Controls Workshop, University of Southern California, Los Angeles, CA, 2012 \\
+%\vspace*{-4.5ex}
+%
+%IEEE Conference on Decision and Control, Orlando, FL, USA, 2011\\
+%\vspace*{-4.5ex}
+%
+ %National Control Engineering Students Workshop, University of Maryland,College Park, MD, 2011 \\
+%\vspace*{-4.5ex}
+
+%Engineering Research Expo, University of California, San Diego CA, 2011 
+
+ %\vspace*{-3ex}
+%\hspace{-8.5ex}\rule{16.5cm}{0.4pt}
+% \vspace*{-3ex}
+%\vspace*{-5ex}
+%%
+%%Weekly research group paper presentations, UCSD, 2009-present
+%\vspace*{-4.5ex}
+%\section{RESEARCH INTERESTS}       
+%Dynamical systems and control; Mobile sensor networks; Distributed
+%coordination algorithms; Cooperative control; Robotics; Underwater vehicles; Parameter estimation; Game theory; Ad hoc wireless networks; distributed state estimation
+%\vspace*{-2.5ex}
+%\section{ADDITIONAL INTERESTS}
+%surfing, rock climbing, photography, travel, reading
+
+
+\end{resume}
+\end{document}
+
+
+
+
+
+
+
