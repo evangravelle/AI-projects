@@ -1,7 +1,9 @@
 import gym
-env = gym.make('DoomBasic-v0')
+import gym_pull     # Only required once, envs will be loaded with import gym_pull afterwards
+env = gym.make('ppaquette/DoomBasic-v0')
 
-env.monitor.start('./tmp/doom-experiment', force=True)
+# num_actions = env.action_space.n
+# env.monitor.start('tmp/doom-experiment', force=True)
 env.reset()
 action = [0] * 43
 action[0] = 1
@@ -14,4 +16,4 @@ for _ in range(100):
     if done:
         break
 
-env.monitor.close()
+# env.monitor.close()

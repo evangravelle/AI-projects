@@ -17,26 +17,48 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import random
 import datetime
+import sys
+import os.path
 
 # Initializations
 env = gym.make('Pong-v0')
 # env.monitor.start('./tmp/pong-1', force=True)
+checkpoint_filename = 'pong_scores/model.ckpt'
+iteration_filename = 'pong_scores/iterations.txt'
+score_filename = 'pong_scores/score.txt'
+ep_filename = 'pong_scores/episodes.txt'
 num_actions = env.action_space.n
 num_rows = 210
 reduced_rows = 164
 num_cols = 160
 num_chan = 3
 input_size = reduced_rows * num_cols
-memory_cap = 1000
-replay_memory = np.zeros((memory_cap, input_size + 1 + 1 + input_size))
+float_test = np.float32(32.0)
+memory_cap = 500000  # One million takes up about 1GB of RAM
+replay_memory = np.zeros((memory_cap, input_size + 1 + 1 + input_size), dtype=bool)
+# print "size of replay_memory: ", sys.getsizeof(replay_memory)
 not_terminal = np.ones(memory_cap, dtype=int)
 replay_count = 0
-total_iter = 0
+
+# Read saved files, if they exist
+if os.path.isfile(iteration_filename):
+    with open(iteration_filename) as iter_file:
+        total_iter = int(iter_file.read())
+else:
+    total_iter = 0
+if os.path.isfile(ep_filename):
+    with open(ep_filename) as ep_file:
+        start_ep = int(ep_file.read())
+else:
+    start_ep = 0
+# print 'total_iter = ', total_iter
 
 # Parameters
 epsilon = 1
 epsilon_final = 0.1
-num_episodes = 100
+eps_cutoff = 1000000
+delta_eps = (epsilon_final - epsilon) / eps_cutoff
+num_episodes = 101
 num_timesteps = 2000
 batch_size = 32
 gamma = 0.99
@@ -61,7 +83,7 @@ def epsilon_greedy(_epsilon, _vals):
     return int(_action)
 
 
-epsilon_coefficient = (epsilon - epsilon_final) ** (1. / num_episodes)
+# epsilon_coefficient = (epsilon - epsilon_final) ** (1. / num_episodes)
 ep_length = np.zeros(num_episodes)
 np.set_printoptions(precision=2)
 
@@ -99,7 +121,7 @@ h_conv2_flat = tf.reshape(h_conv2, [-1, 11 * 10 * 32])
 h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1) + b_fc1)
 # print "h_fc1 = ", h_fc1
 
-# Fifth layer is output with dropout
+# Fifth layer is output (with dropout?)
 # keep_prob = tf.placeholder(tf.float32)
 # h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 W_fc2 = tf.Variable(tf.truncated_normal([256, num_actions], mean=0.0, stddev=0.1))
@@ -113,18 +135,27 @@ loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_acti
 
 # train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 train_step = tf.train.AdamOptimizer().minimize(loss)
-sess.run(tf.initialize_all_variables())
 
+# Start session
+sess.run(tf.initialize_all_variables())
+saver = tf.train.Saver()
+if os.path.isfile(checkpoint_filename):
+    saver.restore(sess, checkpoint_filename)
+    print 'Model restored from %s' % checkpoint_filename
 start_time = datetime.datetime.now().time()
 
 # Training loop
-for ep in range(num_episodes):
+avg_score = 0.
+ep = start_ep
+while ep < start_ep + num_episodes:
     print "episode ", ep
     prev_obs = env.reset()
 
     # Take a random action at first time step
     action = env.action_space.sample()
     obs, reward, done, info = env.step(action)
+    if reward == 1:
+        avg_score += 1
     obs_reduced = reduce_image(obs)
     # env.render()
     obs_diff = obs_reduced - reduce_image(prev_obs)
@@ -139,6 +170,8 @@ for ep in range(num_episodes):
             action = epsilon_greedy(epsilon, prev_Q_vals_arr)
 
         obs, reward, done, info = env.step(action)
+        if reward == 1:
+            avg_score += 1
         obs_reduced = reduce_image(obs)
         # env.render()
         obs_diff = obs_reduced - prev_obs_reduced
@@ -178,13 +211,31 @@ for ep in range(num_episodes):
         prev_action = action
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
+        total_iter += 1
+        if total_iter <= eps_cutoff:
+            epsilon += delta_eps
+        else:
+            pass
 
     ep_length[ep] = t
-    total_iter += t
-    epsilon *= epsilon_coefficient
+
+    if ep % 10 == 9:
+        im_str = "pong_scores/score%d" % ep
+        plt.imsave(fname=im_str, arr=obs, format='png')
+        save_path = saver.save(sess, checkpoint_filename)
+        print "Model saved in file: %s" % save_path
+        with open(iteration_filename, 'w') as iter_file:
+            iter_file.write(str(total_iter))
+        with open(ep_filename, 'w') as ep_file:
+            ep_file.write(str(ep+1))
+        with open(score_filename, 'a') as score_file:
+            score_file.write(str(avg_score/10.) + '\n')
+        avg_score = 0.
+
+    ep += 1
+
+    # epsilon *= epsilon_coefficient
     # plt.imshow(obs, interpolation='nearest')
-    im_str = "pong_scores/score%d" % ep
-    plt.imsave(fname=im_str, arr=obs, format='png')
 
 end_time = datetime.datetime.now().time()
 sess.close()
