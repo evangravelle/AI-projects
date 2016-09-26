@@ -11,6 +11,8 @@
 # DQN paper trains for 10 million frames, with epsilon linearly annealed
 # from 1 to 0.1 in first million frames, then held constant
 
+# Write Q-values to a file, less noisy indicator of learning!
+
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
@@ -84,7 +86,7 @@ def epsilon_greedy(_epsilon, _vals):
 
 
 # epsilon_coefficient = (epsilon - epsilon_final) ** (1. / num_episodes)
-ep_length = np.zeros(num_episodes)
+ep_length = np.zeros(10000)
 np.set_printoptions(precision=2)
 
 sess = tf.InteractiveSession()
