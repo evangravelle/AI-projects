@@ -11,7 +11,8 @@
 # DQN paper trains for 10 million frames, with epsilon linearly annealed
 # from 1 to 0.1 in first million frames, then held constant
 
-# Write Q-values to a file, less noisy indicator of learning!
+# Implement a random policy at checkpoints during training, take the max
+# of the Q values at each state and average them, this is a less noisy indicator of learning!
 
 import gym
 import numpy as np
@@ -56,15 +57,18 @@ else:
 # print 'total_iter = ', total_iter
 
 # Parameters
-epsilon = 1
+epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
-delta_eps = (epsilon_final - epsilon) / eps_cutoff
-num_episodes = 101
+num_episodes = 100
 num_timesteps = 2000
 batch_size = 32
 gamma = 0.99
 
+if total_iter <= eps_cutoff:
+    epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
+else:
+    epsilon = epsilon_final
 
 # Returns cropped BW image of play area
 # 0 is black, 1 is white.
@@ -77,6 +81,7 @@ def reduce_image(_obs):
 
 # Returns an action following an epsilon-greedy policy
 def epsilon_greedy(_epsilon, _vals):
+    assert 0.0 <= _epsilon <= 1.0, "Epsilon is out of bounds"
     _rand = np.random.random()
     if _rand < 1. - _epsilon:
         _action = _vals.argmax()
@@ -215,11 +220,12 @@ while ep < start_ep + num_episodes:
         prev_obs_diff = obs_diff[:]
         total_iter += 1
         if total_iter <= eps_cutoff:
-            epsilon += delta_eps
+            epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
         else:
             pass
 
     ep_length[ep] = t
+    print "epsilon = ", epsilon
 
     if ep % 10 == 9:
         im_str = "pong_scores/score%d" % ep
