@@ -11,8 +11,7 @@
 # DQN paper trains for 10 million frames, with epsilon linearly annealed
 # from 1 to 0.1 in first million frames, then held constant
 
-# Implement a random policy at checkpoints during training, take the max
-# of the Q values at each state and average them, this is a less noisy indicator of learning!
+# Can try using epsilon = 0.05 at each epoch, as a better indicator of learning
 
 import gym
 import numpy as np
@@ -30,6 +29,7 @@ checkpoint_filename = 'pong_scores/model.ckpt'
 iteration_filename = 'pong_scores/iterations.txt'
 score_filename = 'pong_scores/score.txt'
 ep_filename = 'pong_scores/episodes.txt'
+Q_filename = 'pong_scores/Q_val.txt'
 num_actions = env.action_space.n
 num_rows = 210
 reduced_rows = 164
@@ -60,15 +60,19 @@ else:
 epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
-num_episodes = 100
+num_epochs = 100  # 100 episodes per epoch
+num_episodes = 500  # per execution of script
 num_timesteps = 2000
 batch_size = 32
 gamma = 0.99
 
+avg_Q = np.zeros(num_epochs)
+hold_out_set = np.zeros((num_timesteps, input_size))
 if total_iter <= eps_cutoff:
     epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
 else:
     epsilon = epsilon_final
+
 
 # Returns cropped BW image of play area
 # 0 is black, 1 is white.
@@ -150,6 +154,40 @@ if os.path.isfile(checkpoint_filename):
     saver.restore(sess, checkpoint_filename)
     print 'Model restored from %s' % checkpoint_filename
 start_time = datetime.datetime.now().time()
+
+# Create hold-out set for Q-value statistics
+epoch = 0
+avg_score = 0
+prev_obs = env.reset()
+action = env.action_space.sample()
+obs, reward, done, info = env.step(action)
+obs_reduced = reduce_image(obs)
+# env.render()
+obs_diff = obs_reduced - reduce_image(prev_obs)
+for t in range(1, num_timesteps):
+    prev_obs_reduced = obs_reduced[:]
+    prev_obs_diff = obs_diff[:]
+    # print "Q_vals", prev_Q_vals_arr
+    obs, reward, done, info = env.step(action)
+    if reward == 1:
+        avg_score += 1
+    obs_reduced = reduce_image(obs)
+    # env.render()
+    obs_diff = obs_reduced - prev_obs_reduced
+    hold_out_set[t, :] = obs_diff.reshape((1, -1))
+    Q_vals_arr = sess.run(Q_vals, feed_dict={s: hold_out_set[t, :].reshape(1, -1)})
+    # print "Q_vals_arr = ", Q_vals_arr
+    avg_Q[epoch] += max(Q_vals_arr.reshape(-1))
+    if done:
+        break
+    prev_action = action
+    prev_obs_reduced = obs_reduced[:]
+hold_out_length = t + 1
+hold_out_set = hold_out_set[:hold_out_length, :]
+avg_Q[epoch] /= hold_out_length
+with open(Q_filename, 'a') as Q_file:
+    Q_file.write(str(avg_Q[epoch]))
+epoch += 1
 
 # Training loop
 avg_score = 0.
@@ -242,8 +280,18 @@ while ep < start_ep + num_episodes:
 
     ep += 1
 
-    # epsilon *= epsilon_coefficient
-    # plt.imshow(obs, interpolation='nearest')
+    # Every 100 episodes, record average max Q value at each state in hold out set
+    if ep % 100 == 99:
+        for state in hold_out_set:
+            print "state dimension = ", np.shape(state)
+            Q_vals_arr = sess.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
+            avg_Q[epoch] += max(Q_vals_arr)
+        avg_Q[epoch] /= hold_out_length
+        with open(Q_filename, 'a') as Q_file:
+            Q_file.write(str(avg_Q[epoch]))
+        epoch += 1
+
+
 
 end_time = datetime.datetime.now().time()
 sess.close()
