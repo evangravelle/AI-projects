@@ -106,9 +106,9 @@ sess = tf.InteractiveSession()
 s = tf.placeholder(tf.float32, shape=[None, input_size])  # 1st dim is batch size
 a = tf.placeholder(tf.int32, shape=[None])
 y = tf.placeholder(tf.float32, shape=[None])
-# print "s = ", s
-# print "a = ", a
-# print "y = ", y
+print "s = ", s
+print "a = ", a
+print "y = ", y
 
 # First layer is max pooling to reduce the image to (?, 82, 80, 1)
 s_image = tf.reshape(s, [-1, reduced_rows, num_cols, 1])
@@ -140,14 +140,14 @@ h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1) + b_fc1)
 W_fc2 = tf.Variable(tf.truncated_normal([256, num_actions], mean=0.0, stddev=0.1))
 b_fc2 = tf.Variable(tf.constant(0.1, shape=[num_actions]))
 Q_vals = tf.matmul(h_fc1, W_fc2) + b_fc2
-# print "Q_vals = ", Q_vals
+print "Q_vals = ", Q_vals
 
 # Loss function is average mean squared error over mini-batch
 loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_actions)))) ** 2)
-# print "one_hot = ", tf.transpose(tf.one_hot(num_actions, a))
+print "one_hot = ", tf.transpose(tf.one_hot(a, num_actions))
 
-# train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
-train_step = tf.train.AdamOptimizer().minimize(loss)
+train_step = tf.train.GradientDescentOptimizer(0.0001).minimize(loss)
+# train_step = tf.train.AdamOptimizer().minimize(loss)
 
 # Start session
 sess.run(tf.initialize_all_variables())
@@ -243,21 +243,26 @@ while ep < start_ep + num_episodes:
 
         # currently inefficient implementation, consider using partial_run (experimental)
         # intermediate tensors are freed at the end of a sess.run()
-        Q_vals_arr = sess.run(Q_vals, feed_dict={s: replay_memory[3][replay_ind, :].reshape(1, -1)})
-        print 'action = ', replay_memory[1][replay_ind]
-        print 'reward = ', replay_memory[2][replay_ind]
-        print 'Q_vals = ', Q_vals_arr
-        r = replay_memory[2][replay_ind]
+        Q_vals_arr = sess.run(Q_vals, feed_dict={
+          s: replay_memory[3][current_replays, :].reshape(current_batch_size, -1)})
+        print 't = ', t
+        print 'epsilon = ', epsilon
+        print 'action = ', replay_memory[1][current_replays]
+        print 'reward = ', replay_memory[2][current_replays]
+        print 'Q_vals       = ', Q_vals_arr
+        r = replay_memory[2][current_replays]
         nt = not_terminal[current_replays]
+        # print 'state.shape() = ', np.shape(replay_memory[0][current_replays, :])
         target = r + gamma * np.amax(Q_vals_arr, axis=1) * nt
-        # print "target size = ", np.shape(target)
+        # print "target.shape() = ", np.shape(target.reshape(-1, 1))
 
-        train_step.run(feed_dict={s: replay_memory[0][replay_ind, :].reshape(1, -1),
-                                  a: replay_memory[1][replay_ind,],
+        train_step.run(feed_dict={s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1),
+                                  a: replay_memory[1][current_replays],
                                   y: target})
 
-        Q_vals_arr_after = sess.run(Q_vals, feed_dict={s: replay_memory[3][replay_ind, :].reshape(1, -1)})
-        print 'Q_vals_after = ', Q_vals_arr_after
+        Q_vals_arr_after = sess.run(Q_vals, feed_dict={
+          s: replay_memory[3][current_replays, :].reshape(current_batch_size, -1)})
+        print 'Q_vals after = ', Q_vals_arr_after, '\n'
         if done:
             break
         total_iter += 1
@@ -285,6 +290,7 @@ while ep < start_ep + num_episodes:
     ep += 1
 
     # Every 100 episodes, record average max Q value at each state in hold out set
+    # feed this in as a batch, for efficiency
     if ep % 100 == 99:
         for state in hold_out_set:
             print "state dimension = ", np.shape(state)
