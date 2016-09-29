@@ -38,7 +38,9 @@ num_chan = 3
 input_size = reduced_rows * num_cols
 float_test = np.float32(32.0)
 memory_cap = 500000  # One million should take up about 1GB of RAM
-replay_memory = np.zeros((memory_cap, input_size + 1 + 1 + input_size), dtype=bool)
+replay_memory = [np.zeros((memory_cap, input_size), dtype=bool),
+                 np.zeros(memory_cap), np.zeros(memory_cap),
+                 np.zeros((memory_cap, input_size), dtype=bool)]
 # print "size of replay_memory: ", sys.getsizeof(replay_memory)
 not_terminal = np.ones(memory_cap, dtype=int)
 replay_count = 0
@@ -61,9 +63,9 @@ epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
 num_epochs = 100  # 100 episodes per epoch
-num_episodes = 500  # per execution of script
+num_episodes = 10  # per execution of script
 num_timesteps = 2000
-batch_size = 32
+batch_size = 1
 gamma = 0.99
 
 avg_Q = np.zeros(num_epochs)
@@ -183,7 +185,7 @@ hold_out_length = t + 1
 hold_out_set = hold_out_set[:hold_out_length, :]
 avg_Q[epoch] /= hold_out_length
 with open(Q_filename, 'a') as Q_file:
-    Q_file.write(str(avg_Q[epoch]))
+    Q_file.write(str(avg_Q[epoch]) + '\n')
 epoch += 1
 
 # Training loop
@@ -225,8 +227,11 @@ while ep < start_ep + num_episodes:
 
         if done:
             not_terminal[replay_ind] = 0
-        replay_memory[replay_ind, :] = np.concatenate((prev_obs_diff.reshape(-1),
-          (action,), (reward,), obs_diff.reshape(-1)))
+        replay_memory[0][replay_ind, :] = prev_obs_diff.reshape(-1)
+        replay_memory[1][replay_ind] = action
+        replay_memory[2][replay_ind] = reward
+        replay_memory[3][replay_ind, :] = obs_diff.reshape(-1)
+
         # print "replay_memory.size() = ", np.shape(replay_memory)
         current_batch_size = min([t, batch_size])
         # print "current_batch_size = ", current_batch_size
@@ -238,16 +243,21 @@ while ep < start_ep + num_episodes:
 
         # currently inefficient implementation, consider using partial_run (experimental)
         # intermediate tensors are freed at the end of a sess.run()
-        Q_vals_arr = sess.run(Q_vals, feed_dict={s: replay_memory[current_replays, input_size + 2:]})
-        r = replay_memory[current_replays, input_size + 1]
+        Q_vals_arr = sess.run(Q_vals, feed_dict={s: replay_memory[3][replay_ind, :].reshape(1, -1)})
+        print 'action = ', replay_memory[1][replay_ind]
+        print 'reward = ', replay_memory[2][replay_ind]
+        print 'Q_vals = ', Q_vals_arr
+        r = replay_memory[2][replay_ind]
         nt = not_terminal[current_replays]
         target = r + gamma * np.amax(Q_vals_arr, axis=1) * nt
         # print "target size = ", np.shape(target)
 
-        train_step.run(feed_dict={s: replay_memory[current_replays, 0:input_size],
-                                  a: replay_memory[current_replays, input_size],
+        train_step.run(feed_dict={s: replay_memory[0][replay_ind, :].reshape(1, -1),
+                                  a: replay_memory[1][replay_ind,],
                                   y: target})
 
+        Q_vals_arr_after = sess.run(Q_vals, feed_dict={s: replay_memory[3][replay_ind, :].reshape(1, -1)})
+        print 'Q_vals_after = ', Q_vals_arr_after
         if done:
             break
         total_iter += 1
@@ -282,7 +292,7 @@ while ep < start_ep + num_episodes:
             avg_Q[epoch] += max(Q_vals_arr)
         avg_Q[epoch] /= hold_out_length
         with open(Q_filename, 'a') as Q_file:
-            Q_file.write(str(avg_Q[epoch]))
+            Q_file.write(str(avg_Q[epoch]) + '\n')
         epoch += 1
 
 

@@ -1,5 +1,5 @@
 import gym
-import gym_pull     # Only required once, envs will be loaded with import gym_pull afterwards
+import gym_pull
 env = gym.make('ppaquette/DoomBasic-v0')
 
 # num_actions = env.action_space.n
