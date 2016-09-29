@@ -1,0 +1,1 @@
+This file exists so that git does not delete the folder when it is empty!

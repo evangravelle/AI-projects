@@ -37,7 +37,7 @@ num_cols = 160
 num_chan = 3
 input_size = reduced_rows * num_cols
 float_test = np.float32(32.0)
-memory_cap = 500000  # One million takes up about 1GB of RAM
+memory_cap = 500000  # One million should take up about 1GB of RAM
 replay_memory = np.zeros((memory_cap, input_size + 1 + 1 + input_size), dtype=bool)
 # print "size of replay_memory: ", sys.getsizeof(replay_memory)
 not_terminal = np.ones(memory_cap, dtype=int)
@@ -157,22 +157,21 @@ start_time = datetime.datetime.now().time()
 
 # Create hold-out set for Q-value statistics
 epoch = 0
-avg_score = 0
 prev_obs = env.reset()
+prev_obs_reduced = reduce_image(prev_obs)
 action = env.action_space.sample()
 obs, reward, done, info = env.step(action)
 obs_reduced = reduce_image(obs)
 # env.render()
-obs_diff = obs_reduced - reduce_image(prev_obs)
+obs_diff = obs_reduced - prev_obs_reduced
+
 for t in range(1, num_timesteps):
     prev_obs_reduced = obs_reduced[:]
     prev_obs_diff = obs_diff[:]
-    # print "Q_vals", prev_Q_vals_arr
+    action = env.action_space.sample()
     obs, reward, done, info = env.step(action)
-    if reward == 1:
-        avg_score += 1
-    obs_reduced = reduce_image(obs)
     # env.render()
+    obs_reduced = reduce_image(obs)
     obs_diff = obs_reduced - prev_obs_reduced
     hold_out_set[t, :] = obs_diff.reshape((1, -1))
     Q_vals_arr = sess.run(Q_vals, feed_dict={s: hold_out_set[t, :].reshape(1, -1)})
@@ -180,8 +179,6 @@ for t in range(1, num_timesteps):
     avg_Q[epoch] += max(Q_vals_arr.reshape(-1))
     if done:
         break
-    prev_action = action
-    prev_obs_reduced = obs_reduced[:]
 hold_out_length = t + 1
 hold_out_set = hold_out_set[:hold_out_length, :]
 avg_Q[epoch] /= hold_out_length
@@ -195,7 +192,7 @@ ep = start_ep
 while ep < start_ep + num_episodes:
     print "episode ", ep
     prev_obs = env.reset()
-
+    prev_obs_reduced = reduce_image(prev_obs)
     # Take a random action at first time step
     action = env.action_space.sample()
     obs, reward, done, info = env.step(action)
@@ -253,9 +250,6 @@ while ep < start_ep + num_episodes:
 
         if done:
             break
-        prev_action = action
-        prev_obs_reduced = obs_reduced[:]
-        prev_obs_diff = obs_diff[:]
         total_iter += 1
         if total_iter <= eps_cutoff:
             epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
@@ -290,7 +284,6 @@ while ep < start_ep + num_episodes:
         with open(Q_filename, 'a') as Q_file:
             Q_file.write(str(avg_Q[epoch]))
         epoch += 1
-
 
 
 end_time = datetime.datetime.now().time()
