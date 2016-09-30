@@ -307,20 +307,19 @@ while ep < start_ep + num_episodes:
             score_file.write(str(avg_score/10.) + '\n')
         avg_score = 0.
 
-    ep += 1
-
-    # Every 00 episodes, record average max Q value at each state in hold out set
+    # Every 10 episodes, record average max Q value at each state in hold out set
     # feed this in as a batch, for efficiency
     if ep % 10 == 9:
         for state in hold_out_set:
-            print "state dimension = ", np.shape(state)
+            # print "state dimension = ", np.shape(state)
             Q_vals_arr = sess.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
-            avg_Q[epoch] += max(Q_vals_arr)
+            avg_Q[epoch] += max(Q_vals_arr.reshape(-1))
         avg_Q[epoch] /= hold_out_length
         with open(Q_filename, 'a') as Q_file:
             Q_file.write(str(avg_Q[epoch]) + '\n')
         epoch += 1
 
+    ep += 1
 
 end_time = datetime.datetime.now().time()
 sess.close()
