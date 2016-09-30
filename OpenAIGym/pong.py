@@ -37,13 +37,14 @@ iteration_filename = 'pong_scores/iterations.txt'
 score_filename = 'pong_scores/score.txt'
 ep_filename = 'pong_scores/episodes.txt'
 Q_filename = 'pong_scores/Q_val.txt'
+epoch_filename = 'pong_scores/epochs.txt'
+hold_out_filename = 'pong_scores/hold_out.txt'
 num_actions = env.action_space.n
 num_rows = 210
 reduced_rows = 164
 num_cols = 160
 num_chan = 3
 input_size = reduced_rows * num_cols
-float_test = np.float32(32.0)
 memory_cap = 500000  # One million should take up about 1GB of RAM
 replay_memory = [np.zeros((memory_cap, input_size), dtype=bool),
                  np.zeros(memory_cap), np.zeros(memory_cap),
@@ -63,6 +64,11 @@ if os.path.isfile(ep_filename):
         start_ep = int(ep_file.read())
 else:
     start_ep = 0
+if os.path.isfile(epoch_filename):
+    with open(epoch_filename) as epoch_file:
+        total_iter = int(epoch_file.read())
+else:
+    epoch = 0
 # print 'total_iter = ', total_iter
 
 # Parameters
@@ -77,7 +83,6 @@ gamma = 0.9
 learning_rate = 1e-4
 
 avg_Q = np.zeros(num_epochs)
-hold_out_set = np.zeros((num_timesteps, input_size))
 if total_iter <= eps_cutoff:
     epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
 else:
@@ -166,33 +171,38 @@ if os.path.isfile(checkpoint_filename):
 start_time = datetime.datetime.now().time()
 
 # Create hold-out set for Q-value statistics
-epoch = 0
-prev_obs = env.reset()
-prev_obs_reduced = reduce_image(prev_obs)
-action = env.action_space.sample()
-obs, reward, done, info = env.step(action)
-obs_reduced = reduce_image(obs)
-# env.render()
-obs_diff = obs_reduced - prev_obs_reduced
-
-for t in range(1, num_timesteps):
-    prev_obs_reduced = obs_reduced[:]
-    prev_obs_diff = obs_diff[:]
+if os.path.isfile(hold_out_filename):
+    hold_out_set = np.load(hold_out_filename)
+    # load set here
+else:
+    hold_out_set = np.zeros((num_timesteps, input_size))
+    prev_obs = env.reset()
+    prev_obs_reduced = reduce_image(prev_obs)
     action = env.action_space.sample()
     obs, reward, done, info = env.step(action)
-    # env.render()
     obs_reduced = reduce_image(obs)
+    # env.render()
     obs_diff = obs_reduced - prev_obs_reduced
-    hold_out_set[t, :] = obs_diff.reshape((1, -1))
-    Q_vals_arr = sess.run(Q_vals, feed_dict={s: hold_out_set[t, :].reshape(1, -1)})
-    # print "Q_vals_arr = ", Q_vals_arr
-    avg_Q[epoch] += max(Q_vals_arr.reshape(-1))
-    if done:
-        break
-hold_out_length = t + 1
-hold_out_set = hold_out_set[:hold_out_length, :]
-avg_Q[epoch] /= hold_out_length
-epoch += 1
+    hold_out_set[0, :] = obs_diff.reshape((1, -1))
+
+    for t in range(1, num_timesteps):
+        prev_obs_reduced = obs_reduced[:]
+        prev_obs_diff = obs_diff[:]
+        action = env.action_space.sample()
+        obs, reward, done, info = env.step(action)
+        # env.render()
+        obs_reduced = reduce_image(obs)
+        obs_diff = obs_reduced - prev_obs_reduced
+        hold_out_set[t, :] = obs_diff.reshape((1, -1))
+        Q_vals_arr = sess.run(Q_vals, feed_dict={s: hold_out_set[t, :].reshape(1, -1)})
+        # print "Q_vals_arr = ", Q_vals_arr
+        avg_Q[epoch] += max(Q_vals_arr.reshape(-1))
+        if done:
+            break
+    hold_out_length = t + 1
+    hold_out_set = hold_out_set[:hold_out_length, :]
+    np.save(hold_out_filename, hold_out_set)
+    avg_Q[epoch] /= hold_out_length
 
 # Training loop
 avg_score = 0.
@@ -292,11 +302,11 @@ while ep < start_ep + num_episodes:
             pass
 
     ep_length[ep] = t
-    print "epsilon = ", epsilon
+    # print "epsilon = ", epsilon
 
     if ep % 10 == 9:
-        im_str = "pong_scores/score%d" % ep
-        plt.imsave(fname=im_str, arr=obs, format='png')
+        # im_str = "pong_scores/score%d" % ep
+        # plt.imsave(fname=im_str, arr=obs, format='png')
         save_path = saver.save(sess, checkpoint_filename)
         print "Model saved in file: %s" % save_path
         with open(iteration_filename, 'w') as iter_file:
