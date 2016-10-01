@@ -38,7 +38,7 @@ score_filename = 'pong_scores/score.txt'
 ep_filename = 'pong_scores/episodes.txt'
 Q_filename = 'pong_scores/Q_val.txt'
 epoch_filename = 'pong_scores/epochs.txt'
-hold_out_filename = 'pong_scores/hold_out.txt'
+hold_out_filename = 'pong_scores/hold_out'
 num_actions = env.action_space.n
 num_rows = 210
 reduced_rows = 164
@@ -66,7 +66,7 @@ else:
     start_ep = 0
 if os.path.isfile(epoch_filename):
     with open(epoch_filename) as epoch_file:
-        total_iter = int(epoch_file.read())
+        epoch = int(epoch_file.read())
 else:
     epoch = 0
 # print 'total_iter = ', total_iter
@@ -159,8 +159,9 @@ Q_vals = tf.matmul(h_fc1, W_fc2) + b_fc2
 loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_actions)))) ** 2)
 # print "one_hot = ", tf.transpose(tf.one_hot(a, num_actions))
 
-# train_step = tf.train.GradientDescentOptimizer(0.00001).minimize(-loss)
-train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
+train_step = tf.train.GradientDescentOptimizer(0.0001).minimize(loss)
+# train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
+# train_step = tf.train.AdamOptimizer().minimize(loss)
 
 # Start session
 sess.run(tf.initialize_all_variables())
@@ -170,7 +171,7 @@ if os.path.isfile(checkpoint_filename):
     print 'Model restored from %s' % checkpoint_filename
 start_time = datetime.datetime.now().time()
 
-# Create hold-out set for Q-value statistics
+# Load or create hold-out set for Q-value statistics
 if os.path.isfile(hold_out_filename):
     hold_out_set = np.load(hold_out_filename)
     # load set here
@@ -196,13 +197,17 @@ else:
         hold_out_set[t, :] = obs_diff.reshape((1, -1))
         Q_vals_arr = sess.run(Q_vals, feed_dict={s: hold_out_set[t, :].reshape(1, -1)})
         # print "Q_vals_arr = ", Q_vals_arr
-        avg_Q[epoch] += max(Q_vals_arr.reshape(-1))
+        avg_Q[epoch] += np.amax(Q_vals_arr.reshape(-1))
         if done:
             break
     hold_out_length = t + 1
     hold_out_set = hold_out_set[:hold_out_length, :]
     np.save(hold_out_filename, hold_out_set)
-    avg_Q[epoch] /= hold_out_length
+    if epoch == 0:
+        avg_Q[epoch] /= hold_out_length
+        with open(epoch_filename, 'w') as epoch_file:
+            epoch_file.write(str(epoch))
+        epoch += 1
 
 # Training loop
 avg_score = 0.
@@ -286,13 +291,13 @@ while ep < start_ep + num_episodes:
           s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
 
         # print out stuff
-        # print 'action = ', replay_memory[1][current_replays]
-        # print 'reward = ', replay_memory[2][current_replays]
-        # print "previo_Q_vals = ", prev_Q_vals_arr
-        # print 'Q_max = ', np.amax(Q_vals_arr, axis=1)
+        print 'action = ', replay_memory[1][current_replays]
+        print 'reward = ', replay_memory[2][current_replays]
+        print "previo_Q_vals = ", prev_Q_vals_arr
+        print 'Q_max = ', np.amax(Q_vals_arr.reshape(-1))
         # print 'nt = ', nt
         # print "target = ", target
-        # print 'change_Q_vals = ', prev_Q_vals_arr_after - prev_Q_vals_arr, '\n'
+        print 'change_Q_vals = ', prev_Q_vals_arr_after - prev_Q_vals_arr, '\n'
         if done:
             break
         total_iter += 1
@@ -304,6 +309,8 @@ while ep < start_ep + num_episodes:
     ep_length[ep] = t
     # print "epsilon = ", epsilon
 
+    # Every 10 episodes, save variables and statistics
+    # feed this in as a batch, for efficiency
     if ep % 10 == 9:
         # im_str = "pong_scores/score%d" % ep
         # plt.imsave(fname=im_str, arr=obs, format='png')
@@ -316,17 +323,15 @@ while ep < start_ep + num_episodes:
         with open(score_filename, 'a') as score_file:
             score_file.write(str(avg_score/10.) + '\n')
         avg_score = 0.
-
-    # Every 10 episodes, record average max Q value at each state in hold out set
-    # feed this in as a batch, for efficiency
-    if ep % 10 == 9:
         for state in hold_out_set:
             # print "state dimension = ", np.shape(state)
             Q_vals_arr = sess.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
-            avg_Q[epoch] += max(Q_vals_arr.reshape(-1))
+            avg_Q[epoch] += np.amax(Q_vals_arr.reshape(-1))
         avg_Q[epoch] /= hold_out_length
         with open(Q_filename, 'a') as Q_file:
             Q_file.write(str(avg_Q[epoch]) + '\n')
+        with open(epoch_filename, 'w') as epoch_file:
+            epoch_file.write(str(epoch))
         epoch += 1
 
     ep += 1
