@@ -290,13 +290,13 @@ while ep < start_ep + num_episodes:
           s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
 
         # print out stuff
-        print 'action = ', replay_memory[1][current_replays]
-        print 'reward = ', replay_memory[2][current_replays]
-        print "previous_Q_vals = ", prev_Q_vals_arr
-        print 'Q_max = ', Q_max
+        # print 'action = ', replay_memory[1][current_replays]
+        # print 'reward = ', replay_memory[2][current_replays]
+        # print "previous_Q_vals = ", prev_Q_vals_arr
+        # print 'Q_max = ', Q_max
         # print 'nt = ', nt
-        print "target = ", target
-        print 'Q_vals_after    = ', prev_Q_vals_arr_after, '\n'
+        # print "target = ", target
+        # print 'Q_vals_after    = ', prev_Q_vals_arr_after, '\n'
         if done:
             break
         total_iter += 1
