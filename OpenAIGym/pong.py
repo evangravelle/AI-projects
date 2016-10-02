@@ -17,8 +17,6 @@
 # like the random growth of other Q values outweighs the decay from gamma
 # Maybe I enforce that the Q values of other actions don't change in the loss function?
 
-# Another idea: make the input "white", zero mean and unit variance
-
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,6 +26,17 @@ import datetime
 import sys
 import os.path
 import time
+
+# Hyperparameters
+epsilon_initial = 1.0
+epsilon_final = 0.1
+eps_cutoff = 1000000
+num_epochs = 100  # 100 episodes per epoch
+num_episodes = 100  # per execution of script
+num_timesteps = 2000
+batch_size = 32
+gamma = 0.99
+learning_rate = 1e-5
 
 # Initializations
 env = gym.make('Pong-v0')
@@ -70,17 +79,6 @@ if os.path.isfile(epoch_filename):
 else:
     epoch = 0
 # print 'total_iter = ', total_iter
-
-# Parameters
-epsilon_initial = 1.0
-epsilon_final = 0.1
-eps_cutoff = 1000000
-num_epochs = 100  # 100 episodes per epoch
-num_episodes = 100  # per execution of script
-num_timesteps = 2000
-batch_size = 32
-gamma = 0.9
-learning_rate = 1e-4
 
 avg_Q = np.zeros(num_epochs)
 if total_iter <= eps_cutoff:
@@ -130,19 +128,19 @@ h_pool0 = -tf.nn.max_pool(-s_image, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], pa
 
 # Second layer is 16 8x8 convolutions followed by ReLU (?, 21, 20, 16)
 W_conv1 = tf.Variable(tf.truncated_normal([8, 8, 1, 16], mean=0.0, stddev=0.1))
-b_conv1 = tf.Variable(tf.constant(0.1, shape=[16]))
+b_conv1 = tf.Variable(tf.constant(0.0, shape=[16]))
 h_conv1 = tf.nn.relu(tf.nn.conv2d(h_pool0, W_conv1, strides=[1, 4, 4, 1], padding='SAME') + b_conv1)
 # print "h_conv1 = ", h_conv1
 
 # Third layer is 32 4x4 convolutions followed by ReLU (?, 11, 10, 32)
 W_conv2 = tf.Variable(tf.truncated_normal([4, 4, 16, 32], mean=0.0, stddev=0.1))
-b_conv2 = tf.Variable(tf.constant(0.1, shape=[32]))
+b_conv2 = tf.Variable(tf.constant(0.0, shape=[32]))
 h_conv2 = tf.nn.relu(tf.nn.conv2d(h_conv1, W_conv2, strides=[1, 2, 2, 1], padding='SAME') + b_conv2)
 # print "h_conv2 = ", h_conv2
 
 # Fourth layer is fully connected layer followed by ReLU, with arbitrary choice of 256 neurons
 W_fc1 = tf.Variable(tf.truncated_normal([11 * 10 * 32, 256], mean=0.0, stddev=0.1))
-b_fc1 = tf.Variable(tf.constant(0.1, shape=[256]))
+b_fc1 = tf.Variable(tf.constant(0.0, shape=[256]))
 h_conv2_flat = tf.reshape(h_conv2, [-1, 11 * 10 * 32])
 h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1) + b_fc1)
 # print "h_fc1 = ", h_fc1
@@ -156,10 +154,10 @@ Q_vals = tf.matmul(h_fc1, W_fc2) + b_fc2
 # print "Q_vals = ", Q_vals
 
 # Loss function is average mean squared error over mini-batch
-loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_actions)))) ** 2)
+loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_actions)))) ** 2, reduction_indices=[1])
 # print "one_hot = ", tf.transpose(tf.one_hot(a, num_actions))
 
-train_step = tf.train.GradientDescentOptimizer(0.0001).minimize(loss)
+train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
 # train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
 # train_step = tf.train.AdamOptimizer().minimize(loss)
 
@@ -271,7 +269,7 @@ while ep < start_ep + num_episodes:
         # print "current_replays = ", current_replays
 
         # currently inefficient implementation, consider using partial_run (experimental)
-        # intermediate tensors are freed at the end of a sess.run()
+        # Note, intermediate tensors are freed at the end of a sess.run()
         prev_Q_vals_arr = sess.run(Q_vals, feed_dict={
           s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
         Q_vals_arr = sess.run(Q_vals, feed_dict={
@@ -280,8 +278,9 @@ while ep < start_ep + num_episodes:
         # print 'epsilon = ', epsilon
 
         r = replay_memory[2][current_replays]
+        Q_max = np.amax(Q_vals_arr, axis=1)
         nt = not_terminal[current_replays]
-        target = r + gamma * np.amax(Q_vals_arr, axis=1) * nt
+        target = r + gamma * Q_max * nt
 
         train_step.run(feed_dict={s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1),
                                   a: replay_memory[1][current_replays],
@@ -293,11 +292,11 @@ while ep < start_ep + num_episodes:
         # print out stuff
         print 'action = ', replay_memory[1][current_replays]
         print 'reward = ', replay_memory[2][current_replays]
-        print "previo_Q_vals = ", prev_Q_vals_arr
-        print 'Q_max = ', np.amax(Q_vals_arr.reshape(-1))
+        print "previous_Q_vals = ", prev_Q_vals_arr
+        print 'Q_max = ', Q_max
         # print 'nt = ', nt
-        # print "target = ", target
-        print 'change_Q_vals = ', prev_Q_vals_arr_after - prev_Q_vals_arr, '\n'
+        print "target = ", target
+        print 'Q_vals_after    = ', prev_Q_vals_arr_after, '\n'
         if done:
             break
         total_iter += 1
