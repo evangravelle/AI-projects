@@ -56,7 +56,7 @@ reduced_rows = 164
 num_cols = 160
 num_chan = 3
 input_size = reduced_rows * num_cols
-memory_cap = 500000  # One million should take up about 1GB of RAM
+memory_cap = 10000  # One million should take up about 1GB of RAM
 replay_memory = [np.zeros((memory_cap, input_size), dtype=bool),
                  np.zeros(memory_cap), np.zeros(memory_cap),
                  np.zeros((memory_cap, input_size), dtype=bool)]
@@ -83,8 +83,9 @@ if os.path.isfile(epoch_filename):
         epoch = int(epoch_file.read())
 else:
     epoch = 0
-with open(replay_filename, 'rb') as replay_file:
-    replay_memory = pickle.load(replay_memory, replay_file)
+if os.path.isfile(ep_filename):
+    with open(replay_filename, 'rb') as replay_file:
+        replay_memory = pickle.load(replay_memory, replay_file)
 
 # Calculate epsilon, which linearly decreases then remains constant after some threshold
 if total_iter <= eps_cutoff:
