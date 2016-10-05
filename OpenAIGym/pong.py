@@ -26,13 +26,14 @@ import datetime
 import sys
 import os.path
 import time
+import pickle
 
 # Hyperparameters
 epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
 num_epochs = 100  # 100 episodes per epoch
-num_episodes = 100  # per execution of script
+num_episodes = 500  # per execution of script
 num_timesteps = 2000
 batch_size = 32
 gamma = 0.99
@@ -48,6 +49,7 @@ ep_filename = 'pong_scores/episodes.txt'
 Q_filename = 'pong_scores/Q_val.txt'
 epoch_filename = 'pong_scores/epochs.txt'
 hold_out_filename = 'pong_scores/hold_out'
+replay_filename = 'pong_scores/replay.p'
 num_actions = env.action_space.n
 num_rows = 210
 reduced_rows = 164
@@ -81,6 +83,8 @@ if os.path.isfile(epoch_filename):
         epoch = int(epoch_file.read())
 else:
     epoch = 0
+with open(replay_filename, 'rb') as replay_file:
+    replay_memory = pickle.load(replay_memory, replay_file)
 
 # Calculate epsilon, which linearly decreases then remains constant after some threshold
 if total_iter <= eps_cutoff:
@@ -108,17 +112,12 @@ def epsilon_greedy(_epsilon, _vals):
         _action = env.action_space.sample()
     return int(_action)
 
-# Initialize tensorflow variables
-sess = tf.InteractiveSession()
 
 # He et al. recommend, for CNN with ReLUs, random Gaussian weights with zero mean and
 # std = sqrt(2.0/n), where n is number of input nodes
 s = tf.placeholder(tf.float32, shape=[None, input_size])  # 1st dim is batch size
 a = tf.placeholder(tf.int32, shape=[None])
 y = tf.placeholder(tf.float32, shape=[None])
-# print "s = ", s
-# print "a = ", a
-# print "y = ", y
 
 # First layer is max pooling to reduce the image to (?, 82, 80, 1)
 s_image = tf.reshape(s, [-1, reduced_rows, num_cols, 1])
@@ -156,17 +155,23 @@ Q_vals = tf.matmul(h_fc1, W_fc2) + b_fc2
 loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_actions)))) ** 2, reduction_indices=[1])
 # print "one_hot = ", tf.transpose(tf.one_hot(a, num_actions))
 
-train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
+# train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
 # train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
-# train_step = tf.train.AdamOptimizer().minimize(loss)
+train_step = tf.train.AdamOptimizer().minimize(loss)
 
-# Start session
-sess.run(tf.initialize_all_variables())
-saver = tf.train.Saver()
+# Start sessions
+# start_time = datetime.datetime.now().time()
+sess1 = tf.Session()
+sess2 = tf.Session()
+with sess1.as_default():
+    sess1.run(tf.initialize_all_variables())
+    saver1 = tf.train.Saver()
+with sess2.as_default():
+    sess2.run(tf.initialize_all_variables())
+    saver2 = tf.train.Saver()
 if os.path.isfile(checkpoint_filename):
-    saver.restore(sess, checkpoint_filename)
+    saver1.restore(sess1, checkpoint_filename)
     print 'Model restored from %s' % checkpoint_filename
-start_time = datetime.datetime.now().time()
 
 # Load or create hold-out set for Q-value statistics
 if os.path.isfile(hold_out_filename):
@@ -192,7 +197,7 @@ else:
         obs_reduced = reduce_image(obs)
         obs_diff = obs_reduced - prev_obs_reduced
         hold_out_set[t, :] = obs_diff.reshape((1, -1))
-        Q_vals_arr = sess.run(Q_vals, feed_dict={s: hold_out_set[t, :].reshape(1, -1)})
+        Q_vals_arr = sess1.run(Q_vals, feed_dict={s: hold_out_set[t, :].reshape(1, -1)})
         avg_Q[epoch] += np.amax(Q_vals_arr, axis=1)
         if done:
             break
@@ -201,9 +206,23 @@ else:
     np.save(hold_out_filename, hold_out_set)
     if epoch == 0:
         avg_Q[epoch] /= hold_out_length
+        with open(Q_filename, 'a') as Q_file:
+            Q_file.write(str(avg_Q[epoch]) + '\n')
         with open(epoch_filename, 'w') as epoch_file:
             epoch_file.write(str(epoch))
         epoch += 1
+
+# Save initial variables to file, and load checkpoint in sess2
+if total_iter == 0:
+    save_path = saver1.save(sess1, checkpoint_filename)
+    print "Model saved in file: %s" % save_path
+    if os.path.isfile(checkpoint_filename):
+        saver2.restore(sess2, checkpoint_filename)
+        print 'Parameters copied from %s' % checkpoint_filename
+    with open(iteration_filename, 'w') as iter_file:
+        iter_file.write(str(total_iter))
+    with open(ep_filename, 'w') as ep_file:
+        ep_file.write(str(0))
 
 # Training loop
 avg_score = 0.0
@@ -227,12 +246,12 @@ while ep < start_ep + num_episodes:
         # plt.imshow(pool_layer.reshape(-1, num_cols/2), cmap='Greys', interpolation='nearest')
         # plt.show()
         # plt.pause(2.0)
-        prev_Q_vals_toadd = sess.run(Q_vals, feed_dict={s: prev_obs_diff.reshape((1, -1))})
+        prev_Q_vals_toadd = sess1.run(Q_vals, feed_dict={s: prev_obs_diff.reshape((1, -1))})
         # print "previous_Q_vals = ", prev_Q_vals_arr
         action = epsilon_greedy(epsilon, prev_Q_vals_toadd)
         obs, reward, done, info = env.step(action)
         # env.render()
-        avg_score += 1
+        avg_score += reward
         obs_reduced = reduce_image(obs)
         obs_diff = obs_reduced - prev_obs_reduced
         replay_ind = (t - 1) % (memory_cap - 1)
@@ -254,11 +273,11 @@ while ep < start_ep + num_episodes:
 
         # currently inefficient implementation, consider using partial_run (experimental)
         # Note, intermediate tensors are freed at the end of a sess.run()
-        prev_Q_vals_arr = sess.run(Q_vals, feed_dict={
+        prev_Q_vals_arr = sess1.run(Q_vals, feed_dict={
           s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
-        Q_vals_arr = sess.run(Q_vals, feed_dict={
-          s: replay_memory[3][current_replays, :].reshape(current_batch_size, -1)})
 
+        Q_vals_arr = sess2.run(Q_vals, feed_dict={
+          s: replay_memory[3][current_replays, :].reshape(current_batch_size, -1)})
         r = replay_memory[2][current_replays]
         Q_max = np.amax(Q_vals_arr, axis=1)
         nt = not_terminal[current_replays]
@@ -266,19 +285,19 @@ while ep < start_ep + num_episodes:
 
         train_step.run(feed_dict={s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1),
                                   a: replay_memory[1][current_replays],
-                                  y: target})
+                                  y: target}, session=sess1)
 
-        prev_Q_vals_arr_after = sess.run(Q_vals, feed_dict={
+        prev_Q_vals_arr_after = sess1.run(Q_vals, feed_dict={
           s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
 
         # print out stuff
-        # print 'action = ', replay_memory[1][current_replays]
-        # print 'reward = ', replay_memory[2][current_replays]
-        # print "previous_Q_vals = ", prev_Q_vals_arr
-        # print 'Q_max = ', Q_max
-        # print 'nt = ', nt
-        # print "target = ", target
-        # print 'Q_vals_after    = ', prev_Q_vals_arr_after, '\n'
+        print 'action = ', replay_memory[1][current_replays]
+        print 'reward = ', replay_memory[2][current_replays]
+        print "previous_Q_vals = ", prev_Q_vals_arr
+        print 'Q_max = ', Q_max
+        print 'nt = ', nt
+        print "target = ", target
+        print 'Q_vals_after    = ', prev_Q_vals_arr_after, '\n'
         if done:
             break
         total_iter += 1
@@ -289,12 +308,17 @@ while ep < start_ep + num_episodes:
 
     ep_length[ep] = t
 
-    # Every 10 episodes, save variables and statistics
+    # Every 10 episodes, save variables and statistics, and fix new parameters for target
     if ep % 10 == 9:
         # im_str = "pong_scores/score%d" % ep
         # plt.imsave(fname=im_str, arr=obs, format='png')
-        save_path = saver.save(sess, checkpoint_filename)
+        save_path = saver1.save(sess1, checkpoint_filename)
         print "Model saved in file: %s" % save_path
+        if os.path.isfile(checkpoint_filename):
+            saver2.restore(sess2, checkpoint_filename)
+            print 'Parameters copied from %s to the target network' % checkpoint_filename
+        with open(replay_filename, 'wb') as replay_file:
+            pickle.dump(replay_memory, replay_file)
         with open(iteration_filename, 'w') as iter_file:
             iter_file.write(str(total_iter))
         with open(ep_filename, 'w') as ep_file:
@@ -304,7 +328,7 @@ while ep < start_ep + num_episodes:
         # TODO: feed this in as a batch, for efficiency
         for state in hold_out_set:
             # print "state dimension = ", np.shape(state)
-            Q_vals_arr = sess.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
+            Q_vals_arr = sess1.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
             avg_Q[epoch] += np.amax(Q_vals_arr.reshape(-1))
         avg_Q[epoch] /= hold_out_length
         with open(Q_filename, 'a') as Q_file:
@@ -316,6 +340,7 @@ while ep < start_ep + num_episodes:
 
     ep += 1
 
-end_time = datetime.datetime.now().time()
-sess.close()
+# end_time = datetime.datetime.now().time()
+sess1.close()
+sess2.close()
 # env.monitor.close()
