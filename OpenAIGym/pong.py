@@ -13,6 +13,8 @@
 
 # TODO: Possibly add regularization? L2 seems to be better than L1
 
+# TODO: tune learning rate based on observed effects when full minibatch is used
+
 # TODO: current issue, when gamma = 0.99, the target grows because Q_max grows,
 # TODO: it seems like the random growth of other Q values outweighs the decay from gamma.
 # TODO: Maybe I enforce that the Q values of other actions don't change in the loss function?
@@ -37,7 +39,7 @@ num_episodes = 500  # per execution of script
 num_timesteps = 2000
 batch_size = 32
 gamma = 0.99
-learning_rate = 1e-5
+learning_rate = 1e-4
 
 # Initializations
 env = gym.make('Pong-v0')
@@ -83,7 +85,7 @@ if os.path.isfile(epoch_filename):
         epoch = int(epoch_file.read())
 else:
     epoch = 0
-if os.path.isfile(ep_filename):
+if os.path.isfile(replay_filename):
     with open(replay_filename, 'rb') as replay_file:
         replay_memory = pickle.load(replay_file)
 
@@ -157,13 +159,14 @@ loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_acti
 # print "one_hot = ", tf.transpose(tf.one_hot(a, num_actions))
 
 # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
-# train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
-train_step = tf.train.AdamOptimizer().minimize(loss)
+train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
+# train_step = tf.train.AdamOptimizer().minimize(loss)
 
 # Start sessions
 # start_time = datetime.datetime.now().time()
-sess1 = tf.Session()
-sess2 = tf.Session()
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+sess1 = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+sess2 = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 with sess1.as_default():
     sess1.run(tf.initialize_all_variables())
     saver1 = tf.train.Saver()
