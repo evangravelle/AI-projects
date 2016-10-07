@@ -30,18 +30,20 @@ import os.path
 import time
 import pickle
 
-# Hyperparameters
+# HYPERPARAMETERS
 epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
 num_epochs = 100  # 100 episodes per epoch
 num_episodes = 500  # per execution of script
 num_timesteps = 2000
+memory_cap = 100000  # One million should take up about 1GB of RAM
 batch_size = 32
 gamma = 0.99
 learning_rate = 1e-4
 
-# Initializations
+
+# INITIALIZATIONS
 env = gym.make('Pong-v0')
 # env.monitor.start('./tmp/pong-1', force=True)
 checkpoint_filename = 'pong_scores/model.ckpt'
@@ -58,7 +60,6 @@ reduced_rows = 164
 num_cols = 160
 num_chan = 3
 input_size = reduced_rows * num_cols
-memory_cap = 10000  # One million should take up about 1GB of RAM
 replay_memory = [np.zeros((memory_cap, input_size), dtype=bool),
                  np.zeros(memory_cap), np.zeros(memory_cap),
                  np.zeros((memory_cap, input_size), dtype=bool)]
@@ -69,36 +70,42 @@ ep_length = np.zeros(10000)
 avg_Q = np.zeros(num_epochs)
 np.set_printoptions(precision=2)
 
-# Read saved files, if they exist
+
+# LOAD SAVED FILES, IF THEY EXIST
 if os.path.isfile(iteration_filename):
     with open(iteration_filename) as iter_file:
         total_iter = int(iter_file.read())
+    print 'Loaded total_iter = ', total_iter
 else:
     total_iter = 0
 if os.path.isfile(ep_filename):
     with open(ep_filename) as ep_file:
         start_ep = int(ep_file.read())
+    print 'Loaded start_ep = ', start_ep
 else:
     start_ep = 0
 if os.path.isfile(epoch_filename):
     with open(epoch_filename) as epoch_file:
         epoch = int(epoch_file.read())
+    print 'Loaded epoch = ', epoch
 else:
     epoch = 0
 if os.path.isfile(replay_filename):
     with open(replay_filename, 'rb') as replay_file:
         replay_memory = pickle.load(replay_file)
+    print 'Loaded replay_memory = ', np.shape(replay_memory)
 
-# Calculate epsilon, which linearly decreases then remains constant after some threshold
+# Initialize epsilon, which linearly decreases then remains constant
 if total_iter <= eps_cutoff:
     epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
 else:
     epsilon = epsilon_final
 
 
-# Returns cropped BW image of play area
-# 0 is black, 1 is white.
+# FUNCTIONS
+# Returns cropped BW image of play area, 0 is black, 1 is white.
 def reduce_image(_obs):
+    # Returns cropped BW image of play area, 0 is black, 1 is white.
     new_obs = np.sum(_obs, 2) / (3. * 256.)
     new_obs[new_obs < .4] = 0
     new_obs[new_obs >= .4] = 1
@@ -116,6 +123,7 @@ def epsilon_greedy(_epsilon, _vals):
     return int(_action)
 
 
+# INITIALIZE DEEP Q-NETWORK
 # He et al. recommend, for CNN with ReLUs, random Gaussian weights with zero mean and
 # std = sqrt(2.0/n), where n is number of input nodes
 s = tf.placeholder(tf.float32, shape=[None, input_size])  # 1st dim is batch size
@@ -162,7 +170,7 @@ loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_acti
 train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
 # train_step = tf.train.AdamOptimizer().minimize(loss)
 
-# Start sessions
+# START SESSIONS
 # start_time = datetime.datetime.now().time()
 gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
 sess1 = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
@@ -177,7 +185,8 @@ if os.path.isfile(checkpoint_filename):
     saver1.restore(sess1, checkpoint_filename)
     print 'Model restored from %s' % checkpoint_filename
 
-# Load or create hold-out set for Q-value statistics
+
+# LOAD OR CREATE HOLD OUT SET
 if os.path.isfile(hold_out_filename):
     hold_out_set = np.load(hold_out_filename)
     hold_out_length, _ = np.shape(hold_out_set)
@@ -228,7 +237,8 @@ if total_iter == 0:
     with open(ep_filename, 'w') as ep_file:
         ep_file.write(str(0))
 
-# Training loop
+
+# TRAINING LOOP
 avg_score = 0.0
 ep = start_ep
 while ep < start_ep + num_episodes:
@@ -246,10 +256,6 @@ while ep < start_ep + num_episodes:
     for t in range(1, num_timesteps):
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
-        # if t >= 20:
-        # plt.imshow(pool_layer.reshape(-1, num_cols/2), cmap='Greys', interpolation='nearest')
-        # plt.show()
-        # plt.pause(2.0)
         prev_Q_vals_toadd = sess1.run(Q_vals, feed_dict={s: prev_obs_diff.reshape((1, -1))})
         # print "previous_Q_vals = ", prev_Q_vals_arr
         action = epsilon_greedy(epsilon, prev_Q_vals_toadd)
@@ -258,7 +264,7 @@ while ep < start_ep + num_episodes:
         avg_score += reward
         obs_reduced = reduce_image(obs)
         obs_diff = obs_reduced - prev_obs_reduced
-        replay_ind = (t - 1) % (memory_cap - 1)
+        replay_ind = total_iter % memory_cap
         if done:
             not_terminal[replay_ind] = 0
 
@@ -295,13 +301,16 @@ while ep < start_ep + num_episodes:
           s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
 
         # print out stuff
-        # print 'action = ', replay_memory[1][current_replays]
-        # print 'reward = ', replay_memory[2][current_replays]
-        # print "previous_Q_vals = ", prev_Q_vals_arr
-        # print 'Q_max = ', Q_max
-        # print 'nt = ', nt
-        # print "target = ", target
-        # print 'Q_vals_after    = ', prev_Q_vals_arr_after, '\n'
+        print 'reward = ', replay_memory[2][current_replays]
+        print 'previous_Q_vals = ', prev_Q_vals_arr
+        print 'Q_max = ', Q_max
+        print 'nt = ', nt
+        print 'target = ', target
+        print 'action = ', replay_memory[1][current_replays]
+        print 'Q_vals_delta =    ', prev_Q_vals_arr_after - prev_Q_vals_arr, '\n'
+        if reward != 0.:
+            plt.imshow(obs, interpolation='nearest')  # cmap='Greys'
+            plt.show()
         if done:
             break
         total_iter += 1
