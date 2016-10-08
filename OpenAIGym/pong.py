@@ -35,7 +35,7 @@ eps_cutoff = 1000000
 num_epochs = 100  # 100 episodes per epoch
 num_episodes = 500  # per execution of script
 num_timesteps = 2000
-memory_cap = 100000  # One million should take up about 1GB of RAM
+memory_cap = 10000  # One million should take up about 1GB of RAM
 batch_size = 32
 gamma = 0.99
 learning_rate = .0005
@@ -169,10 +169,11 @@ train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
 # train_step = tf.train.AdamOptimizer().minimize(loss)
 
 # START SESSIONS
-# start_time = datetime.datetime.now().time()
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
-sess1 = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-sess2 = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+# gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+# sess1 = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+# sess2 = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+sess1 = tf.Session()
+sess2 = tf.Session()
 with sess1.as_default():
     sess1.run(tf.initialize_all_variables())
     saver1 = tf.train.Saver()
@@ -352,7 +353,6 @@ while ep < start_ep + num_episodes:
 
     ep += 1
 
-# end_time = datetime.datetime.now().time()
 sess1.close()
 sess2.close()
 # env.monitor.close()
