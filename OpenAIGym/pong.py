@@ -91,7 +91,7 @@ else:
 if os.path.isfile(replay_filename):
     with open(replay_filename, 'rb') as replay_file:
         replay_memory = pickle.load(replay_file)
-    print 'Loaded replay_memory = ', np.shape(replay_memory)
+    print 'Loaded replay_memory'
 
 # Initialize epsilon, which linearly decreases then remains constant
 if total_iter <= eps_cutoff:
