@@ -24,10 +24,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import random
-import datetime
-import sys
+# import sys
 import os.path
-import time
 import pickle
 
 # HYPERPARAMETERS
@@ -40,7 +38,8 @@ num_timesteps = 2000
 memory_cap = 100000  # One million should take up about 1GB of RAM
 batch_size = 32
 gamma = 0.99
-learning_rate = 1e-4
+learning_rate = .0005
+verbose = False
 
 
 # INITIALIZATIONS
@@ -66,7 +65,6 @@ replay_memory = [np.zeros((memory_cap, input_size), dtype=bool),
 # print "size of replay_memory: ", sys.getsizeof(replay_memory)
 not_terminal = np.ones(memory_cap, dtype=int)
 replay_count = 0
-ep_length = np.zeros(10000)
 avg_Q = np.zeros(num_epochs)
 np.set_printoptions(precision=2)
 
@@ -261,6 +259,9 @@ while ep < start_ep + num_episodes:
         action = epsilon_greedy(epsilon, prev_Q_vals_toadd)
         obs, reward, done, info = env.step(action)
         # env.render()
+        if verbose and reward > 0:
+            plt.imshow(obs, interpolation='nearest')  # cmap='Greys'
+            plt.show()
         avg_score += reward
         obs_reduced = reduce_image(obs)
         obs_diff = obs_reduced - prev_obs_reduced
@@ -274,9 +275,9 @@ while ep < start_ep + num_episodes:
         replay_memory[3][replay_ind, :] = obs_diff.reshape(-1)
 
         # print "replay_memory.size() = ", np.shape(replay_memory)
-        current_batch_size = min([t, batch_size])
+        current_batch_size = min([total_iter + 1, batch_size])
         # print "current_batch_size = ", current_batch_size
-        current_replay_length = min([t, memory_cap])
+        current_replay_length = min([total_iter + 1, memory_cap])
         # print "current_replay_length = ", current_replay_length
         current_replays = random.sample(xrange(current_replay_length), current_batch_size)
         # print "current_replays = ", current_replays
@@ -301,25 +302,23 @@ while ep < start_ep + num_episodes:
           s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
 
         # print out stuff
-        print 'reward = ', replay_memory[2][current_replays]
-        print 'previous_Q_vals = ', prev_Q_vals_arr
-        print 'Q_max = ', Q_max
-        print 'nt = ', nt
-        print 'target = ', target
-        print 'action = ', replay_memory[1][current_replays]
-        print 'Q_vals_delta =    ', prev_Q_vals_arr_after - prev_Q_vals_arr, '\n'
-        if reward != 0.:
-            plt.imshow(obs, interpolation='nearest')  # cmap='Greys'
-            plt.show()
-        if done:
-            break
+        if verbose:
+            ind = np.argmax(replay_memory[2][current_replays])
+            if replay_memory[2][current_replays[ind]] > 0.5:
+                print 'total_iter = ', total_iter
+                print 'reward = ', replay_memory[2][current_replays[ind]]
+                print 'previous_Q_vals = ', prev_Q_vals_arr[ind, :]
+                print 'Q_max = ', Q_max[ind]
+                print 'nt = ', nt[ind]
+                print 'target = ', target[ind]
+                print 'action = ', replay_memory[1][current_replays[ind]]
+                print 'Q_vals_delta =    ', prev_Q_vals_arr_after[ind, :] - prev_Q_vals_arr[ind, :], '\n'
+
         total_iter += 1
         if total_iter <= eps_cutoff:
             epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
-        else:
-            pass
-
-    ep_length[ep] = t
+        if done:
+            break
 
     # Every 10 episodes, save variables and statistics, and fix new parameters for target
     if ep % 10 == 9:
