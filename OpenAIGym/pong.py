@@ -32,8 +32,8 @@ import pickle
 epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
-num_epochs = 100  # 100 episodes per epoch
 num_episodes = 500  # per execution of script
+num_epochs = int(num_episodes / 100.)  # 100 episodes per epoch
 num_timesteps = 2000
 memory_cap = 10000  # One million should take up about 1GB of RAM
 batch_size = 32
@@ -64,8 +64,6 @@ replay_memory = [np.zeros((memory_cap, input_size), dtype=bool),
                  np.zeros((memory_cap, input_size), dtype=bool)]
 # print "size of replay_memory: ", sys.getsizeof(replay_memory)
 not_terminal = np.ones(memory_cap, dtype=int)
-replay_count = 0
-avg_Q = np.zeros(num_epochs)
 np.set_printoptions(precision=2)
 
 
@@ -199,7 +197,7 @@ else:
     obs_reduced = reduce_image(obs)
     obs_diff = obs_reduced - prev_obs_reduced
     hold_out_set[0, :] = obs_diff.reshape((1, -1))
-
+    avg_Q = 0
     for t in range(1, num_timesteps):
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
@@ -210,16 +208,16 @@ else:
         obs_diff = obs_reduced - prev_obs_reduced
         hold_out_set[t, :] = obs_diff.reshape((1, -1))
         Q_vals_arr = sess1.run(Q_vals, feed_dict={s: hold_out_set[t, :].reshape(1, -1)})
-        avg_Q[epoch] += np.amax(Q_vals_arr, axis=1)
+        avg_Q += np.amax(Q_vals_arr, axis=1)
         if done:
             break
     hold_out_length = t + 1
     hold_out_set = hold_out_set[:hold_out_length, :]
     np.save(hold_out_filename, hold_out_set)
     if epoch == 0:
-        avg_Q[epoch] /= hold_out_length
+        avg_Q /= hold_out_length
         with open(Q_filename, 'a') as Q_file:
-            Q_file.write(str(avg_Q[epoch]) + '\n')
+            Q_file.write(str(avg_Q) + '\n')
         with open(epoch_filename, 'w') as epoch_file:
             epoch_file.write(str(epoch))
         epoch += 1
@@ -339,13 +337,14 @@ while ep < start_ep + num_episodes:
         with open(score_filename, 'a') as score_file:
             score_file.write(str(avg_score/10.) + '\n')
         # TODO: feed this in as a batch, for efficiency
+        avg_Q = 0
         for state in hold_out_set:
             # print "state dimension = ", np.shape(state)
             Q_vals_arr = sess1.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
-            avg_Q[epoch] += np.amax(Q_vals_arr.reshape(-1))
-        avg_Q[epoch] /= hold_out_length
+            avg_Q += np.amax(Q_vals_arr.reshape(-1))
+        avg_Q /= hold_out_length
         with open(Q_filename, 'a') as Q_file:
-            Q_file.write(str(avg_Q[epoch]) + '\n')
+            Q_file.write(str(avg_Q) + '\n')
         with open(epoch_filename, 'w') as epoch_file:
             epoch_file.write(str(epoch))
         avg_score = 0.0
