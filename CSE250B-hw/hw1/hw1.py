@@ -2,6 +2,7 @@
 import numpy as np
 import random
 from tensorflow.examples.tutorials.mnist import input_data
+from sklearn.cluster import KMeans
 
 # mnist contains train, validation, and test objects
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=False)
@@ -15,8 +16,8 @@ num_test = mnist.test.num_examples
 test_set, test_labels = mnist.test.next_batch(num_test)
 
 # Parameters
-k = 10
-max_iterations = 1000
+k = 500
+max_iterations = 100
 
 # k-means clustering
 centroids_ind = random.sample(xrange(num_train), k)
@@ -31,13 +32,14 @@ def get_centroid(_x):
     return np.mean(_x, axis=1)
 
 
-def get_nn(_x1, _x):
+def get_nn(_x_input, _x):
     _dist = np.inf
-    for _i, _ in np.shape(_x):
-        _new_dist = get_distance(_x1, _x[i, :])
+    _ind = np.nan
+    for _x_ind, _x1 in enumerate(_x):
+        _new_dist = get_distance(_x_input, _x1)
         if _new_dist < _dist:
             _dist = _new_dist
-            _ind = _i
+            _ind = _x_ind
     return _ind
 
 
@@ -66,7 +68,7 @@ for i in xrange(max_iterations):
                 centroids[j, :] += x1
                 ctr += 1.
         if ctr == 0:
-            centroids[j, :] = train_set[random.sample(xrange(num_train))]
+            centroids[j, :] = train_set[random.sample(xrange(num_train), 1)]
         else:
             centroids[j, :] /= ctr
 
@@ -78,10 +80,10 @@ for i in xrange(max_iterations):
 
 # Find the training example closest to the mean
 prototypes = np.zeros((k, dim_input))
-prototype_labels = np.zeros(k)
+prototype_labels = np.zeros(k, dtype=np.uint8)
 for j in range(k):
     dist = np.inf
-    for x_ind, x1 in enumerate(x):
+    for x_ind, x1 in enumerate(train_set):
         if cluster[x_ind] == j:
             new_dist = get_distance(x1, centroids[j])
             if new_dist < dist:
@@ -92,13 +94,14 @@ for j in range(k):
 # Test performance of this set of prototypes, compared to random selection of prototypes
 rand_inds = random.sample(xrange(num_train), k)
 rand_prototypes = train_set[rand_inds, :]
-nns = np.zeros(k)
-rand_nns = np.zeros(k)
-for x_ind, x1 in enumerate(train_set):
+rand_labels = train_labels[rand_inds]
+nns = np.zeros(num_test, dtype=np.uint8)
+rand_nns = np.zeros(num_test, dtype=np.uint8)
+for x_ind, x1 in enumerate(test_set):
     nns[x_ind] = get_nn(x1, prototypes)
     rand_nns[x_ind] = get_nn(x1, rand_prototypes)
-error_rate = np.sum(np.equal(test_labels, prototype_labels[nns])) / num_train
-error_rate_rand = np.sum(np.equal(test_labels, prototype_labels[rand_nns])) / num_train
+accuracy = np.sum(np.equal(test_labels, prototype_labels[nns])) / float(num_test)
+accuracy_rand = np.sum(np.equal(test_labels, rand_labels[rand_nns])) / float(num_test)
 
-print 'error_rate = ', error_rate
-print 'error_rate_rand = ', error_rate_rand
+print 'accuracy = ', accuracy
+print 'accuracy_rand = ', accuracy_rand
