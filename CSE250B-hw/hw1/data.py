@@ -11,9 +11,9 @@ accuracy_rand50 = [0.5709, 0.6296, 0.5745]
 accuracy100 = [0.8361, 0.8271, 0.8384]
 accuracy_rand100 = [0.7124, 0.6915, 0.733]
 
-# k = 500, this starts doing worse :(
-accuracy500 = []
-accuracy_rand500 = []
+# k = 200,
+accuracy200 = [0.873, 0.8745, 0.8733]
+accuracy_rand200 = [0.7706, 0.7634, 0.7814]
 
 # k = 1000
 accuracy1000 = []

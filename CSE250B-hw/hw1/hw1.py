@@ -2,7 +2,7 @@
 import numpy as np
 import random
 from tensorflow.examples.tutorials.mnist import input_data
-from sklearn.cluster import KMeans
+# from sklearn.cluster import KMeans
 
 # mnist contains train, validation, and test objects
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=False)
@@ -16,8 +16,8 @@ num_test = mnist.test.num_examples
 test_set, test_labels = mnist.test.next_batch(num_test)
 
 # Parameters
-k = 500
-max_iterations = 100
+k = 200
+max_iterations = 30
 
 # k-means clustering
 centroids_ind = random.sample(xrange(num_train), k)
@@ -44,7 +44,7 @@ def get_nn(_x_input, _x):
 
 
 prev_cost = np.inf
-cluster = np.zeros(num_train)
+cluster = np.zeros(num_train, dtype=np.uint16)
 for i in xrange(max_iterations):
 
     # Assign a cluster to each point
@@ -61,27 +61,28 @@ for i in xrange(max_iterations):
 
     # Find new centroids for each cluster
     centroids = np.zeros((k, dim_input))
-    for j in range(k):
-        ctr = 0.
+    for j in xrange(k):
+        ctr = 0
         for x_ind, x1 in enumerate(train_set):
             if cluster[x_ind] == j:
                 centroids[j, :] += x1
-                ctr += 1.
-        if ctr == 0:
-            centroids[j, :] = train_set[random.sample(xrange(num_train), 1)]
+                ctr += 1
+        if ctr > 0:
+            centroids[j, :] /= float(ctr)
         else:
-            centroids[j, :] /= ctr
+            centroids[j, :] = train_set[random.sample(xrange(num_train), 1)]
 
     print 'cost = ', cost
     if i > 0 and abs((cost - prev_cost) / prev_cost) < 0.001:
         break
 
     prev_cost = cost
+print 'k-means has converged!'
 
-# Find the training example closest to the mean
+# Find the training example closest to the centroid
 prototypes = np.zeros((k, dim_input))
-prototype_labels = np.zeros(k, dtype=np.uint8)
-for j in range(k):
+prototype_labels = np.zeros(k, dtype=np.uint16)
+for j in xrange(k):
     dist = np.inf
     for x_ind, x1 in enumerate(train_set):
         if cluster[x_ind] == j:
@@ -95,8 +96,8 @@ for j in range(k):
 rand_inds = random.sample(xrange(num_train), k)
 rand_prototypes = train_set[rand_inds, :]
 rand_labels = train_labels[rand_inds]
-nns = np.zeros(num_test, dtype=np.uint8)
-rand_nns = np.zeros(num_test, dtype=np.uint8)
+nns = np.zeros(num_test, dtype=np.uint16)
+rand_nns = np.zeros(num_test, dtype=np.uint16)
 for x_ind, x1 in enumerate(test_set):
     nns[x_ind] = get_nn(x1, prototypes)
     rand_nns[x_ind] = get_nn(x1, rand_prototypes)
