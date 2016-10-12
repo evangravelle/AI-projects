@@ -16,7 +16,7 @@ num_test = mnist.test.num_examples
 test_set, test_labels = mnist.test.next_batch(num_test)
 
 # Parameters
-k = 1000
+k = 5000
 max_iterations = 30
 
 # k-means clustering
