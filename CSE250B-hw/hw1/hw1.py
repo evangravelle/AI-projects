@@ -16,8 +16,8 @@ num_test = mnist.test.num_examples
 test_set, test_labels = mnist.test.next_batch(num_test)
 
 # Parameters
-k = 5000
-max_iterations = 30
+k = 10000
+max_iterations = 6
 
 # k-means clustering
 centroids_ind = random.sample(xrange(num_train), k)
