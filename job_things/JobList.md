@@ -43,9 +43,18 @@ Research Scientist - Machine Learning
 http://www.bosch-career.us/en/applying_us/jobsearch_9
 
 #### Lawrence Livermore National Labs (Livermore)
+Machine Learning Specialist  
+Machine Learning Engineer  
+Computer Vision Specialist  
+Data Scientist  
 http://careers-ext.llnl.gov/jobs/search
 
 #### Apple (Cupertino)
+Research Scientist - Machine Learning  
+Machine Learning Engineer, Platform Architecture  
+Siri Machine Learning Engineer
+Core OS Machine Learning and Differential Privacy Engineer  
+Sr. Data Scientist - Applied Machine Learning  
 https://jobs.apple.com/us/search?#specs&ss=research&t=0&so=&j=HDWEG|SFWEG&lo=0*USA&pN=0&openJobId=35882005
 
 #### Cruise Automation (San Francisco) - startup bought by GM
