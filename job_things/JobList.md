@@ -9,10 +9,10 @@ Make traffic code, others open source
 https://research.google.com/workatgoogle.html#/machine-intelligence-roles  
 https://www.google.com/about/careers
 
-Google Brain Residency (Mountain View) - applications open in fall 2016, needs at least one letter of rec
+Google Brain Residency (Mountain View) - applications open in fall 2016, needs at least one letter of rec  
 https://www.google.com/about/careers/search#!t=jo&jid=147545001&  
 
-Deepmind (London?) - Send a cover letter and CV to joinus@deepmind.com
+Deepmind (London?) - Send a cover letter and CV to joinus@deepmind.com  
 https://deepmind.com/careers/
 
 #### Tesla (Palo Alto)
