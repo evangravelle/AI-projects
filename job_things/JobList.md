@@ -15,11 +15,9 @@ https://www.google.com/about/careers/search#!t=jo&jid=147545001&
 Deepmind (London?) - Send a cover letter and CV to joinus@deepmind.com  
 https://deepmind.com/careers/
 
-#### Tesla (Palo Alto)
+#### Tesla (Palo Alto) - 
+Data Scientist, Autopilot Maps. Senior Software Engineer, Maps & Navigation. 
 https://www.teslamotors.com/careers/search#/?department=1&region=4
-
-#### SpaceX (Hawthorne)
-http://www.spacex.com/careers/list
 
 #### Drive.ai (Mountain View)
 https://driveai.recruiterbox.com/
@@ -40,6 +38,9 @@ https://jobs.apple.com/us/search?#specs&ss=research&t=0&so=&j=HDWEG|SFWEG&lo=0*U
 
 #### Cruise Automation (San Francisco) - startup bought by GM
 https://jobs.lever.co/cruise
+
+#### SpaceX (Hawthorne)
+http://www.spacex.com/careers/list
 
 #### Qualcomm (San Diego)
 https://www.qualcomm.com/company/careers/locations
