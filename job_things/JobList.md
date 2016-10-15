@@ -2,6 +2,7 @@
 Update resume  
 Update/organize code in github  
 Make traffic code, others open source  
+keywords: research, data, engineer, machine learning, AI
 
 ### Companies
 
@@ -16,7 +17,8 @@ Deepmind (London?) - Send a cover letter and CV to joinus@deepmind.com
 https://deepmind.com/careers/
 
 #### Tesla (Palo Alto) - 
-Data Scientist, Autopilot Maps. Senior Software Engineer, Maps & Navigation. 
+Data Scientist, Autopilot Maps  
+Senior Software Engineer, Maps & Navigation  
 https://www.teslamotors.com/careers/search#/?department=1&region=4
 
 #### Drive.ai (Mountain View)
@@ -25,6 +27,9 @@ https://driveai.recruiterbox.com/
 - applied to Engineer: Motion Planning (08-24-16)
 
 #### Facebook (Menlo Park)
+Software Engineer, Machine Learning
+Software Engineer, PhD University Grad (Machine Learning)  
+Research Intern (Applied Machine Learning)  
 http://www.facebook.jobs/california/usa/jobs/
 
 #### Bosch (Palo Alto) - Autonomous Vehicle, AI
