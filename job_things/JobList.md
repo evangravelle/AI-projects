@@ -27,12 +27,19 @@ https://driveai.recruiterbox.com/
 - applied to Engineer: Motion Planning (08-24-16)
 
 #### Facebook (Menlo Park)
-Software Engineer, Machine Learning
+Software Engineer, Machine Learning  
+Applied Research Scientist, Core Machine Learning  
 Software Engineer, PhD University Grad (Machine Learning)  
 Research Intern (Applied Machine Learning)  
+Research Engineer (AI)  
+Research Scientist (AI)
+Computer Vision Engineer  
+Postdoctoral Researcher (AI)  
 http://www.facebook.jobs/california/usa/jobs/
 
 #### Bosch (Palo Alto) - Autonomous Vehicle, AI
+Research Scientist - Deep Learning  
+Research Scientist - Machine Learning  
 http://www.bosch-career.us/en/applying_us/jobsearch_9
 
 #### Lawrence Livermore National Labs (Livermore)
