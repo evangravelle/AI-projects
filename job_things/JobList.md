@@ -68,7 +68,7 @@ https://www.uber.com/careers/list/?city=all&country=united-states-of-america&key
 #### Microsoft (Redmond, WA)
 https://careers.microsoft.com/search.aspx#&&p2=all&p1=all&p3=1002&p4=all&p0=&p5=all
 
-#### SPAWAR (San Diego)
+#### SPAWAR (San Diego) - apply in Octobober for New Professionals Program
 http://jobs.spawar.navy.mil/
 
 #### LinkedIn (San Francisco, Los Angeles)
