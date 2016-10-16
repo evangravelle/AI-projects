@@ -69,6 +69,10 @@ https://www.qualcomm.com/company/careers/locations
 #### Brain Corporation (San Diego)
 http://www.braincorporation.com/careers/
 
+#### Nervana
+Distributed Algorithms Developer
+https://www.nervanasys.com/careers/
+
 #### Numenta (Redwood City)
 http://numenta.com/careers/
 
