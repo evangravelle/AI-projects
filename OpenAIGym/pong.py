@@ -38,7 +38,7 @@ num_timesteps = 2000
 memory_cap = 10000  # One million should take up about 1GB of RAM
 batch_size = 32
 gamma = 0.99
-learning_rate = .0005
+learning_rate = .00025
 verbose = False
 
 
@@ -163,7 +163,7 @@ loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_acti
 # print "one_hot = ", tf.transpose(tf.one_hot(a, num_actions))
 
 # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
-train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
+train_step = tf.train.RMSPropOptimizer(learning_rate, decay=0.95, momentum=0.95, epsilon=0.01).minimize(loss)
 # train_step = tf.train.AdamOptimizer().minimize(loss)
 
 # START SESSIONS
@@ -303,6 +303,7 @@ while ep < start_ep + num_episodes:
         # print out stuff
         if verbose:
             ind = np.argmax(replay_memory[2][current_replays])
+            # if a reward is received
             if replay_memory[2][current_replays[ind]] > 0.5:
                 print 'total_iter = ', total_iter
                 print 'reward = ', replay_memory[2][current_replays[ind]]
