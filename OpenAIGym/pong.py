@@ -33,13 +33,14 @@ epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
 num_episodes = 500  # per execution of script
-num_epochs = int(num_episodes / 100.)  # 100 episodes per epoch
-num_timesteps = 2000
+max_num_timesteps = 2000
 memory_cap = 10000  # One million should take up about 1GB of RAM
 batch_size = 32
 gamma = 0.99
-learning_rate = .00025
-verbose = False
+# learning_rate = .00025  # assuming RMPProp is used
+learning_rate = .001
+verbose = True
+target_fix_time = 10000
 
 
 # INITIALIZATIONS
@@ -50,7 +51,6 @@ iteration_filename = 'pong_scores/iterations.txt'
 score_filename = 'pong_scores/score.txt'
 ep_filename = 'pong_scores/episodes.txt'
 Q_filename = 'pong_scores/Q_val.txt'
-epoch_filename = 'pong_scores/epochs.txt'
 hold_out_filename = 'pong_scores/hold_out'
 replay_filename = 'pong_scores/replay.p'
 num_actions = env.action_space.n
@@ -59,12 +59,13 @@ reduced_rows = 164
 num_cols = 160
 num_chan = 3
 input_size = reduced_rows * num_cols
-replay_memory = [np.zeros((memory_cap, input_size), dtype=bool),
-                 np.zeros(memory_cap), np.zeros(memory_cap),
-                 np.zeros((memory_cap, input_size), dtype=bool)]
+replay_memory = [np.zeros((memory_cap, input_size), dtype=np.int8),
+                 np.zeros(memory_cap, dtype=np.uint8),
+                 np.zeros(memory_cap, dtype=np.uint8),
+                 np.zeros((memory_cap, input_size), dtype=np.int8)]
 # print "size of replay_memory: ", sys.getsizeof(replay_memory)
 not_terminal = np.ones(memory_cap, dtype=int)
-np.set_printoptions(precision=2)
+np.set_printoptions(precision=4)
 
 
 # LOAD SAVED FILES, IF THEY EXIST
@@ -80,12 +81,6 @@ if os.path.isfile(ep_filename):
     print 'Loaded start_ep = ', start_ep
 else:
     start_ep = 0
-if os.path.isfile(epoch_filename):
-    with open(epoch_filename) as epoch_file:
-        epoch = int(epoch_file.read())
-    print 'Loaded epoch = ', epoch
-else:
-    epoch = 0
 if os.path.isfile(replay_filename):
     with open(replay_filename, 'rb') as replay_file:
         replay_memory = pickle.load(replay_file)
@@ -180,7 +175,7 @@ with sess2.as_default():
     saver2 = tf.train.Saver()
 if os.path.isfile(checkpoint_filename):
     saver1.restore(sess1, checkpoint_filename)
-    print 'Model restored from %s' % checkpoint_filename
+    print 'Model restored from {}'.format(checkpoint_filename)
 
 
 # LOAD OR CREATE HOLD OUT SET
@@ -188,7 +183,7 @@ if os.path.isfile(hold_out_filename):
     hold_out_set = np.load(hold_out_filename)
     hold_out_length, _ = np.shape(hold_out_set)
 else:
-    hold_out_set = np.zeros((num_timesteps, input_size))
+    hold_out_set = np.zeros((max_num_timesteps, input_size))
     prev_obs = env.reset()
     prev_obs_reduced = reduce_image(prev_obs)
     action = env.action_space.sample()
@@ -198,7 +193,7 @@ else:
     obs_diff = obs_reduced - prev_obs_reduced
     hold_out_set[0, :] = obs_diff.reshape((1, -1))
     avg_Q = 0
-    for t in range(1, num_timesteps):
+    for t in range(1, max_num_timesteps):
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
         action = env.action_space.sample()
@@ -214,25 +209,22 @@ else:
     hold_out_length = t + 1
     hold_out_set = hold_out_set[:hold_out_length, :]
     np.save(hold_out_filename, hold_out_set)
-    if epoch == 0:
+    if start_ep == 0:
         avg_Q /= hold_out_length
         with open(Q_filename, 'a') as Q_file:
             Q_file.write(str(avg_Q) + '\n')
-        with open(epoch_filename, 'w') as epoch_file:
-            epoch_file.write(str(epoch))
-        epoch += 1
 
 # Save initial variables to file, and load checkpoint in sess2
-if total_iter == 0:
-    save_path = saver1.save(sess1, checkpoint_filename)
-    print "Model saved in file: %s" % save_path
-    if os.path.isfile(checkpoint_filename):
-        saver2.restore(sess2, checkpoint_filename)
-        print 'Parameters copied from %s' % checkpoint_filename
-    with open(iteration_filename, 'w') as iter_file:
-        iter_file.write(str(total_iter))
-    with open(ep_filename, 'w') as ep_file:
-        ep_file.write(str(0))
+# if total_iter == 0:
+#     save_path = saver1.save(sess1, checkpoint_filename)
+#     print "Model saved in file: {}".format(save_path)
+#     if os.path.isfile(checkpoint_filename):
+#         saver2.restore(sess2, checkpoint_filename)
+#         print 'Parameters copied from {}'.format(checkpoint_filename)
+#     with open(iteration_filename, 'w') as iter_file:
+#         iter_file.write(str(total_iter))
+#     with open(ep_filename, 'w') as ep_file:
+#         ep_file.write(str(0))
 
 
 # TRAINING LOOP
@@ -250,7 +242,7 @@ while ep < start_ep + num_episodes:
     obs_reduced = reduce_image(obs)
     obs_diff = obs_reduced - reduce_image(prev_obs)
 
-    for t in range(1, num_timesteps):
+    for t in range(1, max_num_timesteps):
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
         prev_Q_vals_toadd = sess1.run(Q_vals, feed_dict={s: prev_obs_diff.reshape((1, -1))})
@@ -302,9 +294,9 @@ while ep < start_ep + num_episodes:
 
         # print out stuff
         if verbose:
-            ind = np.argmax(replay_memory[2][current_replays])
-            # if a reward is received
-            if replay_memory[2][current_replays[ind]] > 0.5:
+            ind = np.argmin(replay_memory[2][current_replays])
+            # if a negative reward is received
+            if replay_memory[2][current_replays[ind]] < -0.5:
                 print 'total_iter = ', total_iter
                 print 'reward = ', replay_memory[2][current_replays[ind]]
                 print 'previous_Q_vals = ', prev_Q_vals_arr[ind, :]
@@ -314,42 +306,39 @@ while ep < start_ep + num_episodes:
                 print 'action = ', replay_memory[1][current_replays[ind]]
                 print 'Q_vals_delta =    ', prev_Q_vals_arr_after[ind, :] - prev_Q_vals_arr[ind, :], '\n'
 
+        # After target_fix_time iterations, save variables and statistics, and fix new parameters for target
+        if total_iter % target_fix_time == 0:
+            # im_str = "pong_scores/score{}".format(ep)
+            # plt.imsave(fname=im_str, arr=obs, format='png')
+            save_path = saver1.save(sess1, checkpoint_filename)
+            print "Model saved in file: {}".format(save_path)
+            if os.path.isfile(checkpoint_filename):
+                saver2.restore(sess2, checkpoint_filename)
+                print 'Parameters copied from {} to the target network'.format(checkpoint_filename)
+            with open(replay_filename, 'w') as replay_file:
+                pickle.dump(replay_memory, replay_file)
+            with open(iteration_filename, 'w') as iter_file:
+                iter_file.write(str(total_iter))
+            with open(ep_filename, 'w') as ep_file:
+                ep_file.write(str(ep+1))
+            with open(score_filename, 'a') as score_file:
+                score_file.write(str(avg_score/10.) + '\n')
+            # TODO: feed this in as a batch, for efficiency
+            avg_Q = 0
+            for state in hold_out_set:
+                # print "state dimension = ", np.shape(state)
+                Q_vals_arr = sess1.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
+                avg_Q += np.amax(Q_vals_arr.reshape(-1))
+            avg_Q /= hold_out_length
+            with open(Q_filename, 'a') as Q_file:
+                Q_file.write(str(avg_Q) + '\n')
+            avg_score = 0.0
+
         total_iter += 1
         if total_iter <= eps_cutoff:
             epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
         if done:
             break
-
-    # Every 10 episodes, save variables and statistics, and fix new parameters for target
-    if ep % 10 == 9:
-        # im_str = "pong_scores/score%d" % ep
-        # plt.imsave(fname=im_str, arr=obs, format='png')
-        save_path = saver1.save(sess1, checkpoint_filename)
-        print "Model saved in file: %s" % save_path
-        if os.path.isfile(checkpoint_filename):
-            saver2.restore(sess2, checkpoint_filename)
-            print 'Parameters copied from %s to the target network' % checkpoint_filename
-        with open(replay_filename, 'wb') as replay_file:
-            pickle.dump(replay_memory, replay_file)
-        with open(iteration_filename, 'w') as iter_file:
-            iter_file.write(str(total_iter))
-        with open(ep_filename, 'w') as ep_file:
-            ep_file.write(str(ep+1))
-        with open(score_filename, 'a') as score_file:
-            score_file.write(str(avg_score/10.) + '\n')
-        # TODO: feed this in as a batch, for efficiency
-        avg_Q = 0
-        for state in hold_out_set:
-            # print "state dimension = ", np.shape(state)
-            Q_vals_arr = sess1.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
-            avg_Q += np.amax(Q_vals_arr.reshape(-1))
-        avg_Q /= hold_out_length
-        with open(Q_filename, 'a') as Q_file:
-            Q_file.write(str(avg_Q) + '\n')
-        with open(epoch_filename, 'w') as epoch_file:
-            epoch_file.write(str(epoch))
-        avg_score = 0.0
-        epoch += 1
 
     ep += 1
 
