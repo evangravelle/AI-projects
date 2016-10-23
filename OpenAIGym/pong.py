@@ -32,14 +32,14 @@ import pickle
 epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
-num_episodes = 500  # per execution of script
+num_episodes = 1  # per execution of script
 max_num_timesteps = 2000
 memory_cap = 10000  # One million should take up about 1GB of RAM
 batch_size = 32
 gamma = 0.99
 # learning_rate = .00025  # assuming RMPProp is used
-learning_rate = .001
-verbose = True
+learning_rate = .02
+verbose = False
 target_fix_time = 10000
 
 
@@ -61,7 +61,7 @@ num_chan = 3
 input_size = reduced_rows * num_cols
 replay_memory = [np.zeros((memory_cap, input_size), dtype=np.int8),
                  np.zeros(memory_cap, dtype=np.uint8),
-                 np.zeros(memory_cap, dtype=np.uint8),
+                 np.zeros(memory_cap, dtype=np.int8),
                  np.zeros((memory_cap, input_size), dtype=np.int8)]
 # print "size of replay_memory: ", sys.getsizeof(replay_memory)
 not_terminal = np.ones(memory_cap, dtype=int)
@@ -250,7 +250,7 @@ while ep < start_ep + num_episodes:
         action = epsilon_greedy(epsilon, prev_Q_vals_toadd)
         obs, reward, done, info = env.step(action)
         # env.render()
-        if verbose and reward > 0:
+        if verbose and reward < 0 and False:
             plt.imshow(obs, interpolation='nearest')  # cmap='Greys'
             plt.show()
         avg_score += reward
@@ -296,7 +296,7 @@ while ep < start_ep + num_episodes:
         if verbose:
             ind = np.argmin(replay_memory[2][current_replays])
             # if a negative reward is received
-            if replay_memory[2][current_replays[ind]] < -0.5:
+            if float(replay_memory[2][current_replays[ind]]) < -.5:
                 print 'total_iter = ', total_iter
                 print 'reward = ', replay_memory[2][current_replays[ind]]
                 print 'previous_Q_vals = ', prev_Q_vals_arr[ind, :]
