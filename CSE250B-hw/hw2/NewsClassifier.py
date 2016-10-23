@@ -58,6 +58,19 @@ for doc in xrange(num_test_docs):
         scores[doc, label] = (np.log(train_label_prob[label]) +
                               np.sum(test_counts[doc, :] * np.log(train_word_prob[doc, :])))
 
+
+entropies = -np.sum(train_word_prob * np.log(train_word_prob), axis=0)
+sorted_words1 = np.argsort(entropies)
+sorted_words1 = sorted_words1[0:num_proto]
+
+variances = np.var(train_word_prob, axis=0)
+sorted_words2 = np.argsort(-variances)
+sorted_words2 = sorted_words2[0:num_proto]
+
+# Calculates performace of prototypes
 test_predictions = np.argmax(scores, axis=1)
 accuracy = np.sum(np.equal(test_predictions, test_labels)) / float(num_test_docs)
 print 'accuracy = ', accuracy
+
+# Prints a representative set of words in each class, by taking the words
+# with highest probability in each class from the set of prototypes
