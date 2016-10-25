@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import os
 
-score_filename = 'pong_scores/score.txt'
-Q_filename = 'pong_scores/Q_val.txt'
+score_filename = 'run1/score.txt'
+Q_filename = 'run1/Q_val.txt'
 
 if os.path.isfile(score_filename):
     scores = [line.rstrip('\n') for line in open(score_filename)]

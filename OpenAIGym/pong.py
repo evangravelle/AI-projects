@@ -41,6 +41,7 @@ gamma = 0.99
 learning_rate = .02
 verbose = False
 target_fix_time = 10000
+ep_range = 10
 
 
 # INITIALIZATIONS
@@ -192,7 +193,7 @@ else:
     obs_reduced = reduce_image(obs)
     obs_diff = obs_reduced - prev_obs_reduced
     hold_out_set[0, :] = obs_diff.reshape((1, -1))
-    avg_Q = 0
+    avg_Q = 0.
     for t in range(1, max_num_timesteps):
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
@@ -209,9 +210,9 @@ else:
     hold_out_length = t + 1
     hold_out_set = hold_out_set[:hold_out_length, :]
     np.save(hold_out_filename, hold_out_set)
-    if start_ep == 0:
+    if not os.path.isfile(Q_filename):
         avg_Q /= hold_out_length
-        with open(Q_filename, 'a') as Q_file:
+        with open(Q_filename, 'w') as Q_file:
             Q_file.write(str(avg_Q) + '\n')
 
 # Save initial variables to file, and load checkpoint in sess2
@@ -319,12 +320,8 @@ while ep < start_ep + num_episodes:
                 pickle.dump(replay_memory, replay_file)
             with open(iteration_filename, 'w') as iter_file:
                 iter_file.write(str(total_iter))
-            with open(ep_filename, 'w') as ep_file:
-                ep_file.write(str(ep+1))
-            with open(score_filename, 'a') as score_file:
-                score_file.write(str(avg_score/10.) + '\n')
             # TODO: feed this in as a batch, for efficiency
-            avg_Q = 0
+            avg_Q = 0.
             for state in hold_out_set:
                 # print "state dimension = ", np.shape(state)
                 Q_vals_arr = sess1.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
@@ -332,7 +329,6 @@ while ep < start_ep + num_episodes:
             avg_Q /= hold_out_length
             with open(Q_filename, 'a') as Q_file:
                 Q_file.write(str(avg_Q) + '\n')
-            avg_score = 0.0
 
         total_iter += 1
         if total_iter <= eps_cutoff:
@@ -340,6 +336,12 @@ while ep < start_ep + num_episodes:
         if done:
             break
 
+    if ep % ep_range == 0:
+        with open(ep_filename, 'w') as ep_file:
+            ep_file.write(str(ep + 1))
+        with open(score_filename, 'a') as score_file:
+            score_file.write(str(avg_score / ep_range) + '\n')
+        avg_score = 0.0
     ep += 1
 
 sess1.close()
