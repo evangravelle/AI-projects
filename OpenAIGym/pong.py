@@ -32,7 +32,7 @@ import pickle
 epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
-num_episodes = 1  # per execution of script
+num_episodes = 500  # per execution of script
 max_num_timesteps = 2000
 memory_cap = 10000  # One million should take up about 1GB of RAM
 batch_size = 32
