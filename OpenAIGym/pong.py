@@ -32,16 +32,17 @@ import pickle
 epsilon_initial = 1.0
 epsilon_final = 0.1
 eps_cutoff = 1000000
-num_episodes = 500  # per execution of script
-max_num_timesteps = 2000
+num_episodes = 400  # per execution of script
+max_num_timesteps = 5000
 memory_cap = 10000  # One million should take up about 1GB of RAM
-batch_size = 32
+batch_size = 1
 gamma = 0.99
 # learning_rate = .00025  # assuming RMSProp is used
-learning_rate = .02
-verbose = False
-target_fix_time = 10000
+learning_rate = .0001  # looks like 0.02 was too fast
+target_fix_time = 1000
+save_variables_time = 5000
 ep_range = 10
+verbose = False
 
 
 # INITIALIZATIONS
@@ -213,7 +214,7 @@ else:
     if not os.path.isfile(Q_filename):
         avg_Q /= hold_out_length
         with open(Q_filename, 'w') as Q_file:
-            Q_file.write(str(avg_Q) + '\n')
+            Q_file.write(str(float(avg_Q)) + '\n')
 
 # Save initial variables to file, and load checkpoint in sess2
 # if total_iter == 0:
@@ -297,8 +298,10 @@ while ep < start_ep + num_episodes:
         if verbose:
             ind = np.argmin(replay_memory[2][current_replays])
             # if a negative reward is received
+            # if total_iter % 10 == 0:
             if float(replay_memory[2][current_replays[ind]]) < -.5:
                 print 'total_iter = ', total_iter
+                print 'epsilon = ', epsilon
                 print 'reward = ', replay_memory[2][current_replays[ind]]
                 print 'previous_Q_vals = ', prev_Q_vals_arr[ind, :]
                 print 'Q_max = ', Q_max[ind]
@@ -307,10 +310,8 @@ while ep < start_ep + num_episodes:
                 print 'action = ', replay_memory[1][current_replays[ind]]
                 print 'Q_vals_delta =    ', prev_Q_vals_arr_after[ind, :] - prev_Q_vals_arr[ind, :], '\n'
 
-        # After target_fix_time iterations, save variables and statistics, and fix new parameters for target
-        if total_iter % target_fix_time == 0:
-            # im_str = "pong_scores/score{}".format(ep)
-            # plt.imsave(fname=im_str, arr=obs, format='png')
+        # After save_variables_time iterations, save variables and statistics
+        if total_iter % save_variables_time == 0:
             save_path = saver1.save(sess1, checkpoint_filename)
             print "Model saved in file: {}".format(save_path)
             if os.path.isfile(checkpoint_filename):
@@ -320,6 +321,11 @@ while ep < start_ep + num_episodes:
                 pickle.dump(replay_memory, replay_file)
             with open(iteration_filename, 'w') as iter_file:
                 iter_file.write(str(total_iter))
+
+        # After target_fix_time iterations, fix new parameters for target
+        if total_iter % target_fix_time == 0:
+            # im_str = "pong_scores/score{}".format(ep)
+            # plt.imsave(fname=im_str, arr=obs, format='png')
             # TODO: feed this in as a batch, for efficiency
             avg_Q = 0.
             for state in hold_out_set:
