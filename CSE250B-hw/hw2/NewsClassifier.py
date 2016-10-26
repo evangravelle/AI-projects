@@ -16,7 +16,7 @@ train_counts = np.zeros((num_train_docs, num_words), dtype=np.uint16)
 train_labels = np.zeros(num_train_docs, dtype=np.uint16)
 test_counts = np.zeros((num_test_docs, num_words), dtype=np.uint16)
 test_labels = np.zeros(num_test_docs, dtype=np.uint16)
-train_label_prob = np.zeros(num_train_docs, dtype=np.float32)
+train_label_prob = np.zeros(num_labels, dtype=np.float32)
 train_word_prob = np.zeros((num_train_docs, num_words), dtype=np.float32)
 
 train_lengths = np.sum(train_counts, axis=1)
@@ -48,7 +48,7 @@ train_label_prob /= num_train_docs
 # Finds probability of each word in each class
 for doc in xrange(num_train_docs):
     train_word_prob[doc, :] = ((train_counts[doc, :] + np.ones(num_words)) /
-                            (np.sum(train_counts[doc, :]) + num_words))
+                               (np.sum(train_counts[doc, :]) + num_words))
 
 scores = np.zeros((num_test_docs, num_labels), dtype=np.float32)
 for doc in xrange(num_test_docs):
