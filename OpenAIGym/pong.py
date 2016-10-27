@@ -342,7 +342,7 @@ while ep < start_ep + num_episodes:
         if done:
             break
 
-    if ep % ep_range == 0:
+    if ep % ep_range == 9:
         with open(ep_filename, 'w') as ep_file:
             ep_file.write(str(ep + 1))
         with open(score_filename, 'a') as score_file:
