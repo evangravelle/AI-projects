@@ -15,9 +15,7 @@
 
 # TODO: tune learning rate based on observed effects when full minibatch is used
 
-# TODO: current issue, when gamma = 0.99, the target grows because Q_max grows,
 # TODO: it seems like the random growth of other Q values outweighs the decay from gamma.
-# TODO: Maybe I enforce that the Q values of other actions don't change in the loss function?
 
 import gym
 import numpy as np
@@ -31,16 +29,16 @@ import pickle
 # HYPERPARAMETERS
 epsilon_initial = 1.0
 epsilon_final = 0.1
-eps_cutoff = 1000000
-num_episodes = 400  # per execution of script
+epsilon_cutoff = 1000000
+num_episodes = 100  # per execution of script
 max_num_timesteps = 5000
 memory_cap = 10000  # One million should take up about 1GB of RAM
 batch_size = 1
 gamma = 0.99
 # learning_rate = .00025  # assuming RMSProp is used
-learning_rate = .0001  # looks like 0.02 was too fast
-target_fix_time = 1000
-save_variables_time = 5000
+learning_rate = .001  # .02 was too fast, and .0001 also made Q diverge
+target_fix_time = 5000
+save_variables_time = 20000
 ep_range = 10
 verbose = False
 
@@ -89,8 +87,8 @@ if os.path.isfile(replay_filename):
     print 'Loaded replay_memory'
 
 # Initialize epsilon, which linearly decreases then remains constant
-if total_iter <= eps_cutoff:
-    epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
+if total_iter <= epsilon_cutoff:
+    epsilon = (epsilon_final - epsilon_initial) * total_iter / epsilon_cutoff + 1.0
 else:
     epsilon = epsilon_final
 
@@ -169,27 +167,33 @@ train_step = tf.train.RMSPropOptimizer(learning_rate, decay=0.95, momentum=0.95,
 # sess2 = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 sess1 = tf.Session()
 sess2 = tf.Session()
-with sess1.as_default():
-    sess1.run(tf.initialize_all_variables())
-    saver1 = tf.train.Saver()
-with sess2.as_default():
-    sess2.run(tf.initialize_all_variables())
-    saver2 = tf.train.Saver()
+saver = tf.train.Saver()
 if os.path.isfile(checkpoint_filename):
-    saver1.restore(sess1, checkpoint_filename)
-    print 'Model restored from {}'.format(checkpoint_filename)
+    saver.restore(sess2, checkpoint_filename)
+    print 'Model restored to sess2 from', checkpoint_filename
+    saver.restore(sess1, checkpoint_filename)
+    print 'Model restored to sess1 from', checkpoint_filename
+else:
+    # with sess2.as_default():
+    sess2.run(tf.initialize_all_variables())
+    print 'Model initialized in sess2', checkpoint_filename
+    save_path = saver.save(sess2, checkpoint_filename)
+    print 'Model from sess2 saved in', checkpoint_filename
+    # with sess1.as_default():
+    saver.restore(sess1, checkpoint_filename)
+    print 'Model restored to sess1 from', checkpoint_filename
 
 
 # LOAD OR CREATE HOLD OUT SET
 if os.path.isfile(hold_out_filename):
     hold_out_set = np.load(hold_out_filename)
-    hold_out_length, _ = np.shape(hold_out_set)
+    hold_out_length = np.shape(hold_out_set)[0]
 else:
     hold_out_set = np.zeros((max_num_timesteps, input_size))
     prev_obs = env.reset()
     prev_obs_reduced = reduce_image(prev_obs)
     action = env.action_space.sample()
-    obs, reward, done, info = env.step(action)
+    obs, reward = env.step(action)[:2]
     # env.render()
     obs_reduced = reduce_image(obs)
     obs_diff = obs_reduced - prev_obs_reduced
@@ -199,7 +203,7 @@ else:
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
         action = env.action_space.sample()
-        obs, reward, done, info = env.step(action)
+        obs, reward, done = env.step(action)[:3]
         # env.render()
         obs_reduced = reduce_image(obs)
         obs_diff = obs_reduced - prev_obs_reduced
@@ -216,29 +220,16 @@ else:
         with open(Q_filename, 'w') as Q_file:
             Q_file.write(str(float(avg_Q)) + '\n')
 
-# Save initial variables to file, and load checkpoint in sess2
-# if total_iter == 0:
-#     save_path = saver1.save(sess1, checkpoint_filename)
-#     print "Model saved in file: {}".format(save_path)
-#     if os.path.isfile(checkpoint_filename):
-#         saver2.restore(sess2, checkpoint_filename)
-#         print 'Parameters copied from {}'.format(checkpoint_filename)
-#     with open(iteration_filename, 'w') as iter_file:
-#         iter_file.write(str(total_iter))
-#     with open(ep_filename, 'w') as ep_file:
-#         ep_file.write(str(0))
-
 
 # TRAINING LOOP
-avg_score = 0.0
+avg_score = 0.
 ep = start_ep
 while ep < start_ep + num_episodes:
     print "episode ", ep
     prev_obs = env.reset()
     prev_obs_reduced = reduce_image(prev_obs)
-    # Take a random action at first time step
     action = env.action_space.sample()
-    obs, reward, done, info = env.step(action)
+    obs, reward = env.step(action)[:2]
     # env.render()
     avg_score += reward
     obs_reduced = reduce_image(obs)
@@ -248,19 +239,20 @@ while ep < start_ep + num_episodes:
         prev_obs_reduced = obs_reduced[:]
         prev_obs_diff = obs_diff[:]
         prev_Q_vals_toadd = sess1.run(Q_vals, feed_dict={s: prev_obs_diff.reshape((1, -1))})
-        # print "previous_Q_vals = ", prev_Q_vals_arr
         action = epsilon_greedy(epsilon, prev_Q_vals_toadd)
-        obs, reward, done, info = env.step(action)
+        obs, reward, done = env.step(action)[:3]
         # env.render()
-        if verbose and reward < 0 and False:
-            plt.imshow(obs, interpolation='nearest')  # cmap='Greys'
-            plt.show()
         avg_score += reward
         obs_reduced = reduce_image(obs)
         obs_diff = obs_reduced - prev_obs_reduced
+        if verbose and t % 1 == 1:
+            plt.imshow(obs_diff, interpolation='nearest', cmap='Greys')
+            plt.show()
         replay_ind = total_iter % memory_cap
         if done:
             not_terminal[replay_ind] = 0
+        else:
+            not_terminal[replay_ind] = 1
 
         replay_memory[0][replay_ind, :] = prev_obs_diff.reshape(-1)
         replay_memory[1][replay_ind] = action
@@ -277,13 +269,16 @@ while ep < start_ep + num_episodes:
 
         # currently inefficient implementation, consider using partial_run (experimental)
         # Note, intermediate tensors are freed at the end of a sess.run()
-        prev_Q_vals_arr = sess1.run(Q_vals, feed_dict={
-          s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
+        if verbose:
+            prev_Q_vals_arr = sess1.run(Q_vals, feed_dict={
+              s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
+            Q_vals_arr = sess1.run(Q_vals, feed_dict={
+              s: replay_memory[3][current_replays, :].reshape(current_batch_size, -1)})
 
-        Q_vals_arr = sess2.run(Q_vals, feed_dict={
+        target_vals_arr = sess2.run(Q_vals, feed_dict={
           s: replay_memory[3][current_replays, :].reshape(current_batch_size, -1)})
+        Q_max = np.amax(target_vals_arr, axis=1)
         r = replay_memory[2][current_replays]
-        Q_max = np.amax(Q_vals_arr, axis=1)
         nt = not_terminal[current_replays]
         target = r + gamma * Q_max * nt
 
@@ -291,31 +286,31 @@ while ep < start_ep + num_episodes:
                                   a: replay_memory[1][current_replays],
                                   y: target}, session=sess1)
 
-        prev_Q_vals_arr_after = sess1.run(Q_vals, feed_dict={
-          s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
-
         # print out stuff
         if verbose:
             ind = np.argmin(replay_memory[2][current_replays])
             # if a negative reward is received
-            # if total_iter % 10 == 0:
-            if float(replay_memory[2][current_replays[ind]]) < -.5:
+            # if float(replay_memory[2][current_replays[ind]]) < -.5:
+            if total_iter % target_fix_time/10 == 1:
+                prev_Q_vals_arr_after = sess1.run(Q_vals, feed_dict={
+                  s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
                 print 'total_iter = ', total_iter
-                print 'epsilon = ', epsilon
                 print 'reward = ', replay_memory[2][current_replays[ind]]
-                print 'previous_Q_vals = ', prev_Q_vals_arr[ind, :]
+                print 'Q_vals_arr = ', Q_vals_arr[ind, :]
+                print 'target_vals_arr = ', target_vals_arr[ind, :]
                 print 'Q_max = ', Q_max[ind]
                 print 'nt = ', nt[ind]
                 print 'target = ', target[ind]
                 print 'action = ', replay_memory[1][current_replays[ind]]
+                print 'previous_Q_vals = ', prev_Q_vals_arr[ind, :]
                 print 'Q_vals_delta =    ', prev_Q_vals_arr_after[ind, :] - prev_Q_vals_arr[ind, :], '\n'
 
         # After save_variables_time iterations, save variables and statistics
-        if total_iter % save_variables_time == 0:
-            save_path = saver1.save(sess1, checkpoint_filename)
+        if total_iter % save_variables_time == 0 and total_iter != 0:
+            save_path = saver.save(sess1, checkpoint_filename)
             print "Model saved in file: {}".format(save_path)
             if os.path.isfile(checkpoint_filename):
-                saver2.restore(sess2, checkpoint_filename)
+                saver.restore(sess2, checkpoint_filename)
                 print 'Parameters copied from {} to the target network'.format(checkpoint_filename)
             with open(replay_filename, 'w') as replay_file:
                 pickle.dump(replay_memory, replay_file)
@@ -323,22 +318,22 @@ while ep < start_ep + num_episodes:
                 iter_file.write(str(total_iter))
 
         # After target_fix_time iterations, fix new parameters for target
-        if total_iter % target_fix_time == 0:
+        if total_iter % target_fix_time == 0 and total_iter != 0:
             # im_str = "pong_scores/score{}".format(ep)
             # plt.imsave(fname=im_str, arr=obs, format='png')
-            # TODO: feed this in as a batch, for efficiency
             avg_Q = 0.
-            for state in hold_out_set:
-                # print "state dimension = ", np.shape(state)
-                Q_vals_arr = sess1.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
-                avg_Q += np.amax(Q_vals_arr.reshape(-1))
-            avg_Q /= hold_out_length
+            hold_out_vals_arr = sess1.run(Q_vals, feed_dict={s: hold_out_set})
+            avg_Q = np.sum(np.amax(hold_out_vals_arr, axis=1)) / hold_out_length
+            # for state in hold_out_set:
+            # Q_vals_arr = sess1.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
+            # avg_Q += np.amax(Q_vals_arr.reshape(-1))
+            # avg_Q /= hold_out_length
             with open(Q_filename, 'a') as Q_file:
                 Q_file.write(str(avg_Q) + '\n')
 
         total_iter += 1
-        if total_iter <= eps_cutoff:
-            epsilon = (epsilon_final - epsilon_initial) * total_iter / eps_cutoff + 1.0
+        if total_iter <= epsilon_cutoff:
+            epsilon = (epsilon_final - epsilon_initial) * total_iter / epsilon_cutoff + 1.0
         if done:
             break
 
