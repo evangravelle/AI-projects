@@ -36,11 +36,11 @@ memory_cap = 10000  # One million should take up about 1GB of RAM
 batch_size = 1
 gamma = 0.99
 # learning_rate = .00025  # assuming RMSProp is used
-learning_rate = .001  # .02 was too fast, and .0001 also made Q diverge
-target_fix_time = 5000
+learning_rate = .0001  # .02 was too fast, and .0001 also made Q diverge
+target_fix_time = 1000
 save_variables_time = 20000
 ep_range = 10
-verbose = False
+verbose = True
 
 
 # INITIALIZATIONS
@@ -127,13 +127,13 @@ h_pool0 = -tf.nn.max_pool(-s_image, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], pa
 # print "h_pool0 = ", h_pool0
 
 # Second layer is 16 8x8 convolutions followed by ReLU (?, 21, 20, 16)
-W_conv1 = tf.Variable(tf.truncated_normal([8, 8, 1, 16], mean=0.0, stddev=tf.sqrt(2.0/64.)))
+W_conv1 = tf.Variable(tf.truncated_normal([8, 8, 1, 16], mean=0.0, stddev=tf.sqrt(2./64.)))
 b_conv1 = tf.Variable(tf.constant(0.0, shape=[16]))
 h_conv1 = tf.nn.relu(tf.nn.conv2d(h_pool0, W_conv1, strides=[1, 4, 4, 1], padding='SAME') + b_conv1)
 # print "h_conv1 = ", h_conv1
 
 # Third layer is 32 4x4 convolutions followed by ReLU (?, 11, 10, 32)
-W_conv2 = tf.Variable(tf.truncated_normal([4, 4, 16, 32], mean=0.0, stddev=tf.sqrt(2.0/16.)))
+W_conv2 = tf.Variable(tf.truncated_normal([4, 4, 16, 32], mean=0.0, stddev=tf.sqrt(2./16.)))
 b_conv2 = tf.Variable(tf.constant(0.0, shape=[32]))
 h_conv2 = tf.nn.relu(tf.nn.conv2d(h_conv1, W_conv2, strides=[1, 2, 2, 1], padding='SAME') + b_conv2)
 # print "h_conv2 = ", h_conv2
@@ -169,19 +169,19 @@ sess1 = tf.Session()
 sess2 = tf.Session()
 saver = tf.train.Saver()
 if os.path.isfile(checkpoint_filename):
+    saver.restore(sess1, checkpoint_filename)
+    print 'Model restored to sess1 from', checkpoint_filename
     saver.restore(sess2, checkpoint_filename)
     print 'Model restored to sess2 from', checkpoint_filename
-    saver.restore(sess1, checkpoint_filename)
-    print 'Model restored to sess1 from', checkpoint_filename
 else:
     # with sess2.as_default():
-    sess2.run(tf.initialize_all_variables())
-    print 'Model initialized in sess2', checkpoint_filename
-    save_path = saver.save(sess2, checkpoint_filename)
-    print 'Model from sess2 saved in', checkpoint_filename
+    sess1.run(tf.initialize_all_variables())
+    print 'Model initialized in sess1', checkpoint_filename
+    saver.save(sess1, checkpoint_filename)
+    print 'Model from sess1 saved in', checkpoint_filename
     # with sess1.as_default():
-    saver.restore(sess1, checkpoint_filename)
-    print 'Model restored to sess1 from', checkpoint_filename
+    saver.restore(sess2, checkpoint_filename)
+    print 'Model restored to sess2 from', checkpoint_filename, '\n'
 
 
 # LOAD OR CREATE HOLD OUT SET
@@ -290,16 +290,17 @@ while ep < start_ep + num_episodes:
         if verbose:
             ind = np.argmin(replay_memory[2][current_replays])
             # if a negative reward is received
+            # if total_iter % int(target_fix_time/2.) == 1:
             # if float(replay_memory[2][current_replays[ind]]) < -.5:
-            if total_iter % target_fix_time/10 == 1:
+            if total_iter % 1 == 0:
                 prev_Q_vals_arr_after = sess1.run(Q_vals, feed_dict={
                   s: replay_memory[0][current_replays, :].reshape(current_batch_size, -1)})
                 print 'total_iter = ', total_iter
                 print 'reward = ', replay_memory[2][current_replays[ind]]
                 print 'Q_vals_arr = ', Q_vals_arr[ind, :]
                 print 'target_vals_arr = ', target_vals_arr[ind, :]
-                print 'Q_max = ', Q_max[ind]
-                print 'nt = ', nt[ind]
+                # print 'Q_max = ', Q_max[ind]
+                # print 'nt = ', nt[ind]
                 print 'target = ', target[ind]
                 print 'action = ', replay_memory[1][current_replays[ind]]
                 print 'previous_Q_vals = ', prev_Q_vals_arr[ind, :]
@@ -307,11 +308,6 @@ while ep < start_ep + num_episodes:
 
         # After save_variables_time iterations, save variables and statistics
         if total_iter % save_variables_time == 0 and total_iter != 0:
-            save_path = saver.save(sess1, checkpoint_filename)
-            print "Model saved in file: {}".format(save_path)
-            if os.path.isfile(checkpoint_filename):
-                saver.restore(sess2, checkpoint_filename)
-                print 'Parameters copied from {} to the target network'.format(checkpoint_filename)
             with open(replay_filename, 'w') as replay_file:
                 pickle.dump(replay_memory, replay_file)
             with open(iteration_filename, 'w') as iter_file:
@@ -319,15 +315,14 @@ while ep < start_ep + num_episodes:
 
         # After target_fix_time iterations, fix new parameters for target
         if total_iter % target_fix_time == 0 and total_iter != 0:
-            # im_str = "pong_scores/score{}".format(ep)
-            # plt.imsave(fname=im_str, arr=obs, format='png')
+            saver.save(sess1, checkpoint_filename)
+            print 'Model from sess1 saved in', checkpoint_filename
+            if os.path.isfile(checkpoint_filename):
+                saver.restore(sess2, checkpoint_filename)
+                print 'Model restored to sess2 from', checkpoint_filename
             avg_Q = 0.
             hold_out_vals_arr = sess1.run(Q_vals, feed_dict={s: hold_out_set})
             avg_Q = np.sum(np.amax(hold_out_vals_arr, axis=1)) / hold_out_length
-            # for state in hold_out_set:
-            # Q_vals_arr = sess1.run(Q_vals, feed_dict={s: state.reshape(1, -1)})
-            # avg_Q += np.amax(Q_vals_arr.reshape(-1))
-            # avg_Q /= hold_out_length
             with open(Q_filename, 'a') as Q_file:
                 Q_file.write(str(avg_Q) + '\n')
 
@@ -337,7 +332,7 @@ while ep < start_ep + num_episodes:
         if done:
             break
 
-    if ep % ep_range == 9:
+    if ep % ep_range == ep_range - 1:
         with open(ep_filename, 'w') as ep_file:
             ep_file.write(str(ep + 1))
         with open(score_filename, 'a') as score_file:
