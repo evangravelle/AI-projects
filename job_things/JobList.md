@@ -72,16 +72,22 @@ http://www.spacex.com/careers/list
 https://www.qualcomm.com/company/careers/locations
 
 #### Brain Corporation (San Diego)
+2017 Summer Intern - CS/CE/ECE
 http://www.braincorporation.com/careers/
 
 #### Nervana
 Distributed Algorithms Developer
+Data Scientist/Machine Learning Engineer
 https://www.nervanasys.com/careers/
 
 #### Numenta (Redwood City)
+Research Internship
 http://numenta.com/careers/
 
 #### Vicarious (San Francisco)
+Research Engineer
+Researcher / Senior Researcher
+Developmental Roboticist
 http://careers.vicarious.com/
 
 #### IBM (San Jose, Austin, New York)
