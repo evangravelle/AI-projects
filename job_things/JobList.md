@@ -118,15 +118,8 @@ https://www.uber.com/careers/list/?city=all&country=united-states-of-america&key
 Senior Design Researcher
 https://careers.microsoft.com/search.aspx#&&p2=all&p1=all&p3=1002&p4=all&p0=&p5=all
 
-HERE
 #### SPAWAR (San Diego) - apply in Octobober for New Professionals Program
-http://jobs.spawar.navy.mil/
-
-#### LinkedIn (San Francisco, Los Angeles)
-https://www.linkedin.com/jobs/linkedin-jobs
-
-#### Symantec (Mountain View)
-https://symantec.wd1.myworkdayjobs.com/careers
+http://jobs.spawar.navy.mil/resume_other.aspx?pdc=true
 
 #### Insight Data Science/Engineering Program (Silicon Valley) 
 Held in September and January, funded, apply 3 months before the program
@@ -139,6 +132,7 @@ https://cymer.taleo.net/careersection/2/jobsearch.ftl?lang=en
 #### AMD (Sunnyvale)
 https://www.amd.apply2jobs.com/ProfExt/index.cfm?fuseaction=mExternal.showSearchInterface
 
+HERE
 #### NVIDIA (Santa Clara)
 https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite
 
