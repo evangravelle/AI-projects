@@ -58,9 +58,14 @@ Sr. Data Scientist - Applied Machine Learning
 https://jobs.apple.com/us/search?#specs&ss=research&t=0&so=&j=HDWEG|SFWEG&lo=0*USA&pN=0&openJobId=35882005
 
 #### Cruise Automation (San Francisco) - startup bought by GM
+AI/Simulation Engineer
+Mapping Engineer
+Software Engineer - C++
 https://jobs.lever.co/cruise
 
 #### SpaceX (Hawthorne)
+Data Scientist
+Dynamics Software Engineer
 http://www.spacex.com/careers/list
 
 #### Qualcomm (San Diego)
