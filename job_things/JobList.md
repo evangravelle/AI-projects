@@ -134,6 +134,12 @@ https://www.amd.apply2jobs.com/ProfExt/index.cfm?fuseaction=mExternal.showSearch
 
 HERE
 #### NVIDIA (Santa Clara)
+Applied Research Scientist (Deep Learning Algorithms)
+Research Scientist (Deep Learning)
+Computer Vision and Deep Learning Developer Technology Engineer
+Machine Learning Engineer
+Deep Learning Software Development Engineer
+Deep Learning Engineer
 https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite
 
 #### Netflix (Los Gatos)
