@@ -4,7 +4,7 @@ Update/organize code in github
 Make traffic code, others open source  
 keywords: research, data, engineer, machine learning, AI
 
-### Companies
+### Companies - complete pass made between 10/15/16 and 11/7/16
 
 #### Google (Mountain View)
 https://research.google.com/workatgoogle.html#/machine-intelligence-roles  
@@ -58,50 +58,68 @@ Sr. Data Scientist - Applied Machine Learning
 https://jobs.apple.com/us/search?#specs&ss=research&t=0&so=&j=HDWEG|SFWEG&lo=0*USA&pN=0&openJobId=35882005
 
 #### Cruise Automation (San Francisco) - startup bought by GM
+AI/Simulation Engineer
+Mapping Engineer
+Software Engineer - C++
 https://jobs.lever.co/cruise
 
 #### SpaceX (Hawthorne)
+Data Scientist
+Dynamics Software Engineer
 http://www.spacex.com/careers/list
 
 #### Qualcomm (San Diego)
 https://www.qualcomm.com/company/careers/locations
 
 #### Brain Corporation (San Diego)
+2017 Summer Intern - CS/CE/ECE
 http://www.braincorporation.com/careers/
 
 #### Nervana
 Distributed Algorithms Developer
+Data Scientist/Machine Learning Engineer
 https://www.nervanasys.com/careers/
 
 #### Numenta (Redwood City)
+Research Internship
 http://numenta.com/careers/
 
 #### Vicarious (San Francisco)
+Research Engineer
+Researcher / Senior Researcher
+Developmental Roboticist
 http://careers.vicarious.com/
 
 #### IBM (San Jose, Austin, New York)
+Research Staff Member
 http://www.research.ibm.com/careers/index.shtml
 
 #### Intel (Santa Clara)
+Research Scientist
+Senior Sensor Fusion / SLAM Engineer
+Software Engineer - Machine Learning
+Distributed Algorithms Developer
+Software Engineer, Data Science
+Autonomous Driving Software Engineer
 http://jobs.intel.com/ListJobs/All/Search/country/us/city/santa-clara/intel-job-category/engineering/
 
 #### Twitter (San Francisco)
 https://careers.twitter.com/
 
 #### Uber (San Francisco)
+Data Scientist - Machine Learning, Global Intelligence
+Data Scientist - Mapping Technologies
+Software Engineer - Machine Learning
+Data Science PhD Internship/Co-op (Machine Learning, Forecasting, and Anomaly Detection)
+Data Engineer - Location, Sensing, & Perception
 https://www.uber.com/careers/list/?city=all&country=united-states-of-america&keywords=&subteam=all&team=engineering
 
 #### Microsoft (Redmond, WA)
+Senior Design Researcher
 https://careers.microsoft.com/search.aspx#&&p2=all&p1=all&p3=1002&p4=all&p0=&p5=all
 
 #### SPAWAR (San Diego) - apply in Octobober for New Professionals Program
-http://jobs.spawar.navy.mil/
-
-#### LinkedIn (San Francisco, Los Angeles)
-https://www.linkedin.com/jobs/linkedin-jobs
-
-#### Symantec (Mountain View)
-https://symantec.wd1.myworkdayjobs.com/careers
+http://jobs.spawar.navy.mil/resume_other.aspx?pdc=true
 
 #### Insight Data Science/Engineering Program (Silicon Valley) 
 Held in September and January, funded, apply 3 months before the program
@@ -114,7 +132,14 @@ https://cymer.taleo.net/careersection/2/jobsearch.ftl?lang=en
 #### AMD (Sunnyvale)
 https://www.amd.apply2jobs.com/ProfExt/index.cfm?fuseaction=mExternal.showSearchInterface
 
+HERE
 #### NVIDIA (Santa Clara)
+Applied Research Scientist (Deep Learning Algorithms)
+Research Scientist (Deep Learning)
+Computer Vision and Deep Learning Developer Technology Engineer
+Machine Learning Engineer
+Deep Learning Software Development Engineer
+Deep Learning Engineer
 https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite
 
 #### Netflix (Los Gatos)
