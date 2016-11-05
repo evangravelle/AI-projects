@@ -11,9 +11,11 @@
 # DQN paper trains for 10 million frames, with epsilon linearly annealed
 # from 1 to 0.1 in first million frames, then held constant
 
-# TODO: Possibly add regularization? L2 seems to be better than L1
+# TODO: solve diverging Q issue
 
-# TODO: tune learning rate based on observed effects when full minibatch is used
+# TODO: use previous 4 replay frames as state, not the difference
+
+# TODO: Possibly add regularization? L2 seems to be better than L1
 
 # TODO: it seems like the random growth of other Q values outweighs the decay from gamma.
 
