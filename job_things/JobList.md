@@ -32,7 +32,7 @@ Applied Research Scientist, Core Machine Learning
 Software Engineer, PhD University Grad (Machine Learning)  
 Research Intern (Applied Machine Learning)  
 Research Engineer (AI)  
-Research Scientist (AI)
+Research Scientist (AI)  
 Computer Vision Engineer  
 Postdoctoral Researcher (AI)  
 http://www.facebook.jobs/california/usa/jobs/
