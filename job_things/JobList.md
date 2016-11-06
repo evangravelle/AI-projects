@@ -173,6 +173,7 @@ https://www.yelp.com/careers/job-openings
 http://www.northropgrumman.com/Careers/JobSearch/Pages/default.aspx  
 
 #### General Atomics (San Diego)
+GA-ASI in Poway: 9170BR, 9960BR  
 http://www.ga.com/careers  
 
 #### Illumina (San Diego)
