@@ -193,6 +193,9 @@ https://jobs.raytheon.com/search-jobs/United%20States?orgIds=4679&ac=25646&alp=6
 #### Lockheed Martin (Palmdale, Sunnyvale)
 https://search.lockheedmartinjobs.com/ListJobs/All/Search/state/ca/keyword/research/  
 
+#### Planck Aerosystems
+http://www.planckaero.com/careers.html
+
 #### More Companies
 https://en.wikipedia.org/wiki/Silicon_Valley#Notable_companies  
 Willow Garage  
