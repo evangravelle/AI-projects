@@ -1,4 +1,5 @@
 # Homework 1 - Prototype selection for nearest neighbor
+# Evan Gravelle, Fall 2016
 import numpy as np
 import random
 from tensorflow.examples.tutorials.mnist import input_data

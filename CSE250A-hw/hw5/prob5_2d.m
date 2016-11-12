@@ -1,4 +1,5 @@
 % 5.2d
+% Evan Gravelle, Spring 2016
 clear; clc; close all
 
 load('X.mat')

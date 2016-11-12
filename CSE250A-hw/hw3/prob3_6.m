@@ -1,5 +1,5 @@
 % Problem 3.6, maximum likelihood estimates
-
+% Evan Gravelle, Spring 2016
 clear;clc;close all
 
 load('C:\Users\evan\Desktop\AI\hw3\bigram.mat')

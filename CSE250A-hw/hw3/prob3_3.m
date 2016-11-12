@@ -1,6 +1,6 @@
- clear; clc; close all
-
 % Problem 3.3
+% Evan Gravelle, Spring 2016
+clear; clc; close all
 
 num_iter = 1000000;
 n = 10;

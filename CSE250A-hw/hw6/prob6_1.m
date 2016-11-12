@@ -1,4 +1,5 @@
 % Problem 6.1 - Viterbi Algorithm
+% Evan Gravelle, Spring 2016
 clear; clc; close all
 
 load('emissionMatrix.mat')

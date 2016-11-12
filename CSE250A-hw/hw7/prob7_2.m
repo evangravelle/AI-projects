@@ -1,4 +1,5 @@
 % Problem 7.2
+% Evan Gravelle, Spring 2016
 clear;clc;close all
 
 load('data.mat')

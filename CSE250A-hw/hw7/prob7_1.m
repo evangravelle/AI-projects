@@ -1,4 +1,5 @@
 % Problem 7.1 script
+% Evan Gravelle, Spring 2016
 clear;clc;close all
 
 % Calculates state value function

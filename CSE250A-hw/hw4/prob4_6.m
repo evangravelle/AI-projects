@@ -1,4 +1,5 @@
 % Problem 4.6
+% Evan Gravelle, Spring 2016
 clear;clc;close all
 
 load('C:\Users\evan\Desktop\AI\hw4\newTest3.mat')

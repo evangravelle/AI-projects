@@ -1,6 +1,6 @@
 # DQN implemented for the OpenAI gym pong environment
 # Written by Evan Gravelle
-# 8/5/2016
+# 11/7/2016
 
 # Maximize your score in the Atari 2600 game Pong. In this environment,
 # the observation is an RGB image of the screen, which is an array of

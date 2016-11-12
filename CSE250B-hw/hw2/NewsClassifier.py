@@ -1,7 +1,7 @@
 # This script classifies articles using a naive Bayes model on words contained
 # in the article. Instead of using the entire training set, a subet of the training set
 # is chosen, and performance as a function of number of prototypes is analyzed.
-
+# Evan Gravelle, Fall 2016
 import numpy as np
 import random
 import pickle

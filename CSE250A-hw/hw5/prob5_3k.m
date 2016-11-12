@@ -1,4 +1,5 @@
 % Prob % Prob 5.3k
+% Evan Gravelle, Spring 2016
 clear; clc; close all
 
 num_iter = 20;

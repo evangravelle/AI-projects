@@ -1,3 +1,6 @@
+# Written by Evan Gravelle
+# 11/7/2016
+
 import gym
 import gym_pull
 env = gym.make('ppaquette/DoomBasic-v0')

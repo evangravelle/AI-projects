@@ -1,4 +1,5 @@
 % Prob 5.3h
+% Evan Gravelle, Spring 2016
 clear; clc; close all
 
 g = @(x) 0;

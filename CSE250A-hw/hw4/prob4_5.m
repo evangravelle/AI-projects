@@ -1,4 +1,5 @@
 % Problem 4.5
+% Evan Gravelle, Spring 2016
 clear;clc;close all
 
 load('C:\Users\evan\Desktop\AI\hw4\nasdaq00.mat')

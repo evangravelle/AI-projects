@@ -1,4 +1,5 @@
 % Hangman
+% Evan Gravelle, Spring 2016
 clear;clc;close all
 
 load('word.mat');

@@ -1,4 +1,5 @@
 % Prob 5.3g
+% Evan Gravelle, Spring 2016
 clear; clc; close all
 
 x = linspace(.01,2,100);

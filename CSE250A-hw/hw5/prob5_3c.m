@@ -1,4 +1,5 @@
 % Prob 5.3c
+% Evan Gravelle, Spring 2016
 clear; clc; close all
 
 f = @(x) log(cosh(x));
