@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model
 from scipy.optimize import minimize
 
+
 def prob(w, x, y):
     p = np.zeros(3)
     p[0] = np.exp(np.dot(w[:14], x))
@@ -29,7 +30,7 @@ test_data = data[num_train:]
 w = np.zeros(42)
 ind = 0
 for iter in xrange(num_iterations):
-    func = lambda z:
+    func = lambda z: z^2
     res = minimize(func, w[ind], method='Nelder-Mead', tol=1e-6)
     w[ind] = res.x
     ind += 1
