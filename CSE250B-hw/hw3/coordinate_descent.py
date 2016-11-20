@@ -1,49 +1,125 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn import linear_model
-from scipy.optimize import minimize
+import random
 
-
-def prob(w, x, y):
-    p = np.zeros(3)
-    p[0] = np.exp(np.dot(w[:14], x))
-    p[1] = np.exp(np.dot(w[14:28], x))
-    p[2] = np.exp(np.dot(w[28:], x))
-    p /= np.sum(p)
-    return p
-
+mode = 2  # 1 is custom coordinate descent, 2 is random
 num_pts = 178
 num_att = 13
 num_train = 128
 num_test = 50
-num_iterations = 10000
+num_iterations = 100000
+step_size = .10
+eps = 1e-8
+np.set_printoptions(2)
 
-data = np.zeros((num_pts, num_att + 1))
+
+def prob(_w, _x):
+    p = np.zeros(3)
+    p[0] = np.exp(np.dot(_w[:14], _x))
+    p[1] = np.exp(np.dot(_w[14:28], _x))
+    p[2] = np.exp(np.dot(_w[28:], _x))
+    # print 'w = ', _w[:14]
+    # print 'x = ', _x
+    # print 'prob = ', p
+    p /= np.sum(p)
+    return p
+
+
+def loss(_w, _train_data):
+    l = 0
+    # print 'w = ', w
+    # print 'data = ', _train_data[0, 1:]
+    # print 'prob = ', prob(_w, _train_data[0, 1:])
+    for _i in xrange(num_train):
+        l -= np.log(prob(_w, _train_data[_i, 1:])[int(_train_data[_i, 0]) - 1])
+    return l
+
+
+# first column is label, middle columns are data, last column is zero for offset
+data = np.ones((num_pts, num_att + 2))
 with open('wine.data') as data_file:
     for index, line in enumerate(data_file):
-        data[index, :] = [float(i) for i in line.split(',')]
+        data[index, :14] = [float(i) for i in line.split(',')]
+
 
 np.random.shuffle(data)
-train_data = data[:num_train]
-test_data = data[num_train:]
+train_data = data[:num_train, :]
+test_data = data[num_train:, :]
 
-w = np.zeros(42)
+# training loop
+mid_ctr = 0
 ind = 0
-for iter in xrange(num_iterations):
-    func = lambda z: z^2
-    res = minimize(func, w[ind], method='Nelder-Mead', tol=1e-6)
-    w[ind] = res.x
-    ind += 1
+ctr = 0
+w = np.zeros(42)
+dw = np.zeros(42)
+loss_change = 1000*np.ones(42)
+loss1 = np.zeros(1000)
+prev_best = 1000.
+for k in xrange(num_iterations):
+    dw[ind] = step_size
+    lloss = loss(w - dw, train_data)
+    mloss = loss(w, train_data)
+    rloss = loss(w + dw, train_data)
+    # print 'losses = ', [lloss, mloss, rloss]
+    if abs(lloss - min([lloss, mloss, rloss])) < eps:
+        w[ind] -= step_size
+        loss_change[ind] = abs(lloss - mloss)
+        prev_best = loss_change[ind]
+        mid_ctr = 0
+    elif abs(rloss - min([lloss, mloss, rloss])) < eps:
+        w[ind] += step_size
+        loss_change[ind] = abs(rloss - mloss)
+        prev_best = loss_change[ind]
+        mid_ctr = 0
+    else:
+        loss_change[ind] = prev_best / 2.
+        mid_ctr += 1
 
-regr = linear_model.LogisticRegression(solver='sag', multi_class='multinomial', max_iter=10000)
-regr.fit(train_data[:, 1:], train_data[:, 0])
-# print regr.coef_, regr.intercept_
-# print regr.score(test_data[:, 1:], test_data[:, 0])
+    # if mid_ctr >= 100:
+    #     step_size /= 1.5
+    #     loss_change /= 1.5
+    #     mid_ctr = 0
+    #     print 'step_size = ', step_size
 
-predictions = regr.predict(test_data[:, 1:])
+    # print 'ind =', ind
+    if k % 200 == 0:
+        loss_change = 1000 * np.ones(42)
+        print 'loss = ', loss(w, train_data)
 
-accuracy = np.sum(np.equal(predictions, test_data[:, 0])) / float(num_test)
-print accuracy
+    if k % 100 == 0:
+        step_size *= .99
+        loss1[ctr] = min([lloss, mloss, rloss])
+        ctr += 1
 
-plt.scatter(train_data[:, 1], train_data[:, 2])
-plt.show()
+    dw[ind] = 0
+    if mode == 1:
+        ind = np.argmax(loss_change)
+    elif mode == 2:
+        ind = np.random.random_integers(0, 41)
+
+ctr = 0
+predictions = np.zeros(num_test)
+for i in xrange(num_test):
+    predictions[i] = np.argmax(prob(w, test_data[i, 1:]))
+
+accuracy = np.sum(np.equal(predictions, test_data[:, 0] - 1)) / float(num_test)
+print 'w = ', w
+print 'accuracy = ', accuracy
+
+
+regr = linear_model.LogisticRegression(solver='lbfgs', multi_class='multinomial', C=1000, tol=1e-7, max_iter=50000)
+regr.fit(train_data[:, 1:14], train_data[:, 0])
+w_regr = np.column_stack((regr.coef_, regr.intercept_)).reshape(-1)
+print 'w_regr = ', w_regr
+regr_loss = loss(w_regr, train_data)
+print 'regr_loss = ', regr_loss
+print regr.score(test_data[:, 1:14], test_data[:, 0])
+
+predictions2 = regr.predict(test_data[:, 1:14])
+accuracy2 = np.sum(np.equal(predictions2, test_data[:, 0])) / float(num_test)
+print accuracy2
+
+if mode == 1:
+    np.save('losses_custom.npy', loss1)
+elif mode == 2:
+    np.save('losses_random.npy', loss1)
