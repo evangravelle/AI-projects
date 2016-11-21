@@ -5,7 +5,7 @@ loss1 = np.load('losses_custom.npy')
 loss2 = np.load('losses_random.npy')
 accuracy1 = np.load('accuracy_custom.npy')
 accuracy2 = np.load('accuracy_random.npy')
-loss_opt = .0327
+loss_opt = 3.
 
 plt.figure(1)
 plt.semilogy(loss1, 'b', label='Custom')
