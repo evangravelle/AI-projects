@@ -1,15 +1,18 @@
 import numpy as np
 from sklearn import linear_model
-import random
 
-mode = 2  # 1 is custom coordinate descent, 2 is random
+mode = 1  # 1 is custom coordinate descent, 2 is random
 num_pts = 178
 num_att = 13
 num_train = 128
 num_test = 50
 num_iterations = 100000
-step_size = .10
+step_size = .05
+step_size_final = .0001
+gamma = np.exp(np.log(step_size_final / step_size) / 1000.)
+print gamma
 eps = 1e-8
+reg_term = 10.
 np.set_printoptions(2)
 
 
@@ -25,8 +28,8 @@ def prob(_w, _x):
     return p
 
 
-def loss(_w, _train_data):
-    l = 0
+def loss(_w, _train_data, _reg_term):
+    l = np.linalg.norm(_w) / _reg_term
     # print 'w = ', w
     # print 'data = ', _train_data[0, 1:]
     # print 'prob = ', prob(_w, _train_data[0, 1:])
@@ -54,12 +57,14 @@ w = np.zeros(42)
 dw = np.zeros(42)
 loss_change = 1000*np.ones(42)
 loss1 = np.zeros(1000)
+accuracy = np.zeros(1000)
 prev_best = 1000.
+predictions = np.zeros(num_test)
 for k in xrange(num_iterations):
     dw[ind] = step_size
-    lloss = loss(w - dw, train_data)
-    mloss = loss(w, train_data)
-    rloss = loss(w + dw, train_data)
+    lloss = loss(w - dw, train_data, reg_term)
+    mloss = loss(w, train_data, reg_term)
+    rloss = loss(w + dw, train_data, reg_term)
     # print 'losses = ', [lloss, mloss, rloss]
     if abs(lloss - min([lloss, mloss, rloss])) < eps:
         w[ind] -= step_size
@@ -82,13 +87,20 @@ for k in xrange(num_iterations):
     #     print 'step_size = ', step_size
 
     # print 'ind =', ind
-    if k % 200 == 0:
+    if k % 60 == 0:
         loss_change = 1000 * np.ones(42)
-        print 'loss = ', loss(w, train_data)
+        prev_best = 1000.
 
     if k % 100 == 0:
-        step_size *= .99
+        step_size *= gamma
         loss1[ctr] = min([lloss, mloss, rloss])
+        print 'loss = ', loss(w, train_data, reg_term)
+        print 'step_size = ', step_size
+
+        for i in xrange(num_test):
+            predictions[i] = np.argmax(prob(w, test_data[i, 1:]))
+
+        accuracy[ctr] = np.sum(np.equal(predictions, test_data[:, 0] - 1)) / float(num_test)
         ctr += 1
 
     dw[ind] = 0
@@ -97,29 +109,21 @@ for k in xrange(num_iterations):
     elif mode == 2:
         ind = np.random.random_integers(0, 41)
 
-ctr = 0
-predictions = np.zeros(num_test)
-for i in xrange(num_test):
-    predictions[i] = np.argmax(prob(w, test_data[i, 1:]))
 
-accuracy = np.sum(np.equal(predictions, test_data[:, 0] - 1)) / float(num_test)
 print 'w = ', w
-print 'accuracy = ', accuracy
+print 'loss = ', loss(w, train_data, reg_term)
+print 'accuracy = ', accuracy[ctr - 1]
 
-
-regr = linear_model.LogisticRegression(solver='lbfgs', multi_class='multinomial', C=1000, tol=1e-7, max_iter=50000)
+regr = linear_model.LogisticRegression(solver='lbfgs', multi_class='multinomial', C=reg_term, tol=1e-8, max_iter=num_iterations)
 regr.fit(train_data[:, 1:14], train_data[:, 0])
 w_regr = np.column_stack((regr.coef_, regr.intercept_)).reshape(-1)
 print 'w_regr = ', w_regr
-regr_loss = loss(w_regr, train_data)
-print 'regr_loss = ', regr_loss
-print regr.score(test_data[:, 1:14], test_data[:, 0])
-
-predictions2 = regr.predict(test_data[:, 1:14])
-accuracy2 = np.sum(np.equal(predictions2, test_data[:, 0])) / float(num_test)
-print accuracy2
+print 'regr_loss = ', loss(w_regr, train_data, reg_term)
+print 'regr_accuracy = ', regr.score(test_data[:, 1:14], test_data[:, 0])
 
 if mode == 1:
     np.save('losses_custom.npy', loss1)
+    np.save('accuracy_custom.npy', accuracy)
 elif mode == 2:
     np.save('losses_random.npy', loss1)
+    np.save('accuracy_random.npy', accuracy)
