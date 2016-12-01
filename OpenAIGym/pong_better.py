@@ -30,17 +30,17 @@ import pickle
 epsilon_initial = 1.0
 epsilon_final = 0.1
 epsilon_cutoff = 1000000
-num_episodes = 100  # per execution of script
+num_episodes = 1000  # per execution of script
 max_num_timesteps = 5000
 memory_cap = 10000  # One million should take up about 1GB of RAM
-batch_size = 32
+batch_size = 1
 gamma = 0.99
 # learning_rate = .00025  # assuming RMSProp is used
-learning_rate = .001  # .02 was too fast, and .0001 also made Q diverge
-target_fix_time = 1000
-save_variables_time = 20000
+learning_rate = .00001  # .02 was too fast, and .0001 also made Q diverge
+target_fix_time = 10000
+save_variables_time = 50000
 ep_range = 10
-verbose = True
+verbose = False
 
 
 # INITIALIZATIONS

@@ -1,6 +1,8 @@
 import numpy as np
 import nltk
 import string
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 
 num_v = 5000
 num_c = 1000
@@ -59,8 +61,12 @@ for v_ind, v_word in enumerate(V):
 mut_info = np.zeros((num_v, num_c))
 for v_ind, v_word in enumerate(V):
     for c_ind, c_word in enumerate(C):
-        # if p_c[c_ind] == 0:
-        #     mut_info[v_ind, c_ind] = 0
-        # else:
-        mut_info[v_ind, :] = np.max(np.zeros(num_c), np.log(np.squeeze(p_cw[v_ind, :]) / p_c))
+        if p_c[c_ind] == 0:
+            mut_info[v_ind, c_ind] = 0
+        else:
+            mut_info[v_ind, :] = np.max(np.zeros(num_c), np.log(np.squeeze(p_cw[v_ind, :]) / p_c))
 
+pca = PCA(n_components=100)
+pca.fit(mut_info.T)
+
+kmeans = KMeans(n_clusters=100, random_state=0).fit(pca.transform(mut_info.T))
