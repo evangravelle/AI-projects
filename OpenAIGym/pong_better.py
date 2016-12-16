@@ -4,12 +4,12 @@
 
 # Maximize your score in the Atari 2600 game Pong. In this environment,
 # the observation is an RGB image of the screen, which is an array of
-# shape (210, 160, 3) Each action is repeatedly performed for a duration
-# of k frames, where k is uniformly sampled from {2,3,4}
+# shape (210, 160, 3). Each action is repeatedly performed for a duration
+# of k frames, where k is uniformly sampled from {2,3,4}.
 
-# An episode ends once one player has 20 points
+# An episode ends once one player has 20 points.
 # DQN paper trains for 10 million frames, with epsilon linearly annealed
-# from 1 to 0.1 in first million frames, then held constant
+# from 1 to 0.1 in first million frames, then held constant.
 
 # TODO: solve diverging Q issue
 
