@@ -7,7 +7,7 @@ class Point(object):
         self.y = y
 
     def __str__(self):
-
+        pass
 
 
 class Rectangle(object):
