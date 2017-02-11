@@ -1,58 +1,80 @@
 # Chapter 2 of "Cracking the Coding Interview" covering linked lists
 
+
 class Node(object):
-    """Creates a linked list."""
+    """Creates a node."""
 
     def __init__(self, next=None, data=None):
         self.data = data
         self.next = next
 
-    def set_next(self, next):
-        self.next = next
 
 class LinkedList(object):
+    """Creates a linked list."""
 
-    def __init__(self):
-        self.head = Node()
+    def __init__(self, head=None):
+        self.head = head
 
     def append(self, data):
+        new_node = Node(data=data)
         current = self.head
-        while current.next != None:
-            current = current.next
-        current.set_next(Node(data=data))
+        if current is not None:
+            while current.next is not None:
+                current = current.next
+            current.next = new_node
+        else:
+            self.head = Node(new_node)
+
+    def insert(self, data):
+        new_node = Node(data=data)
+        if self.head is None:
+            self.head = new_node
+        else:
+            new_node.next = self.head
+            self.head = new_node
 
     def delete_node(self, data):
-        node = self.head
-        if node.data == data:
-            node.next =
-        while node.next != None:
-            if node.next.data == data:
-                node.next = node.next.next
-                return head
-            node = node.next
-        return head
+        current = self.head
+        if current.data == data:
+            self.head = current.next
+        while current.next is not None:
+            if current.next.data == data:
+                current.next = current.next.next
+            current = current.next
 
     def delete_dups(self):
         seen = {}
-        node = self
-        while node.next != None:
-            if node.data in seen:
-                node.next = node.next.next
-            else:
-                seen[node.data] = True
-                node = node.next
+        current = self.head
+        if current is None:
+            pass
+        else:
+            seen[current.data] = True
+            while current.next is not None:
+                if current.next.data in seen:
+                    current.next = current.next.next
+                else:
+                    seen[current.next.data] = True
+                    current = current.next
 
-    def print_elements(self):
-        node = self
-        while node.next != None:
-            print node.data
-            node.next = node.next.next
-        print node.data
+    def __str__(self):
+        string = ''
+        current = self.head
+        if current is not None:
+            while current.next is not None:
+                string += str(current.data) + ' '
+                current = current.next
+            string += str(current.data) + ' '
+        else:
+            string = 'empty'
+        return string
 
 
 if __name__ == "__main__":
-    ll = Node(data=5)
-    ll.append(data=10)
-    ll.append(data=11)
+    ll = LinkedList()
+    ll.insert(data=-5)
+    ll.insert(data=10)
+    ll.insert(data=10)
+    ll.insert(data=11)
+    print ll, '\n'
     ll.delete_dups()
-    ll.print_elements()
+    print ll, '\n'
