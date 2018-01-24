@@ -14,20 +14,36 @@ observation = env.reset()
 # Parameters
 for _ in range(100):
     env.render()
-    move = env.action_space.sample()
-    row = move // 9
-    col = move % 9
-    # if not a legal move, resample
-    if not observation[2, row, col]:
-        move = env.action_space.sample()
-        row = np.floor(move / 9)
-        col = move % 9
-    # I am X, opponent is 0
-    # observation consists of 3 9x9 boards, 1st board is my pieces, 2nd board is their pieces, 3rd board is available spots
-    # reward is 0 during game, +/- 1 for winning or losing
-    # done is true when game ends
-    # info contains a string which prints out the board
-    observation, reward, done, info = env.step(0)
+    move = env.action_space.sample()  # 0 - 80 are moves (row-major), 81 is pass, 82 is resign
 
-    if done:
-        break
+    # this code is ugly: define a bool which states if the move is legal or not
+    if move >= 81:
+        observation, reward, done, info = env.step(move)
+        if done:
+            break
+    else:
+        row = move // 9
+        col = move % 9
+        print(move, row, col)
+        print(env.action_space)
+        # if not a legal move, resample
+        while not observation[2, row, col]:
+            move = env.action_space.sample() - 1
+            row = move // 9
+            col = move % 9
+            print(move, row, col)
+        # I am X, opponent is 0
+        # observation consists of 3 9x9 boards: my pieces, their pieces, and available spots
+        # reward is 0 during game, +/- 1 for winning or losing
+        # done is true when game ends
+        # info contains a string which prints out the board
+        observation, reward, done, info = env.step(move)
+
+        if done:
+            if reward == 1:
+                print('VICTORY')
+            elif reward == -1:
+                print('DEFEAT')
+            else:
+                print('HUH?')
+            break
