@@ -1,4 +1,4 @@
-class Tree(object):
+class SearchTree(object):
 
     def __init__(self):
         self.nodes = {}
@@ -7,6 +7,7 @@ class Tree(object):
         if s in self.nodes.keys():
             self.nodes[s]['count'] += 1
             self.nodes[s]['value'] += 1
+            self.nodes[s]['children'] += 'timmy'
         else:
-            node = {'count': 1, 'value': 0}
+            node = {'count': 1, 'value': 0, 'children': []}
             self.nodes[s] = node
