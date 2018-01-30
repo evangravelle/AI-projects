@@ -22,6 +22,6 @@ https://www.youtube.com/watch?v=aUrX-rP_ss4
 
 Go sources:
 
-https://blog.waya.ai/deep-residual-learning-9610bb62c355 - residual layer implementation using keras
-https://github.com/pasky/michi/blob/master/michi.py - Go MCTS implementation
+https://blog.waya.ai/deep-residual-learning-9610bb62c355 - residual layer implementation using keras  
+https://github.com/pasky/michi/blob/master/michi.py - Go MCTS implementation  
 https://github.com/haroldsultan/MCTS - simple MCTS implementation
