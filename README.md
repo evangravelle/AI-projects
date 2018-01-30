@@ -25,3 +25,12 @@ Go sources:
 https://blog.waya.ai/deep-residual-learning-9610bb62c355 - residual layer implementation using keras  
 https://github.com/pasky/michi/blob/master/michi.py - Go MCTS implementation  
 https://github.com/haroldsultan/MCTS - simple MCTS implementation
+
+To print and read:
+
+http://pubs.doc.ic.ac.uk/survey-mcts-methods/survey-mcts-methods.pdf  
+http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=7352306  
+
+Parallelization ideas: 
+- create multiple trees with multiple threads and consolidate them at the end
+- update the same tree with mutliple threads, using locks
