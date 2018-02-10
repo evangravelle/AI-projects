@@ -19,3 +19,16 @@ https://www.udacity.com/course/intro-to-machine-learning--ud120
 https://www.udacity.com/course/reinforcement-learning--ud600  
 https://www.youtube.com/playlist?list=PL5X3mDkKaJrL42i_jhE4N-p6E2Ol62Ofa  
 https://www.youtube.com/watch?v=aUrX-rP_ss4  
+
+Go sources:
+
+https://blog.waya.ai/deep-residual-learning-9610bb62c355 - residual layer implementation using keras  
+https://github.com/pasky/michi/blob/master/michi.py - Go MCTS implementation  
+https://github.com/haroldsultan/MCTS - simple MCTS implementation
+
+Baseline implementation:  
+https://web.stanford.edu/~surag/posts/alphazero.html
+
+Parallelization ideas: 
+- create multiple trees with multiple threads and consolidate them at the end
+- update the same tree with mutliple threads, using locks
