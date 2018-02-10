@@ -11,3 +11,10 @@ class SearchTree(object):
         else:
             node = {'count': 1, 'value': 0, 'children': []}
             self.nodes[s] = node
+
+    def sample_action(self, s):
+
+
+    def search(self, s):
+        for it in range(100):
+            s
