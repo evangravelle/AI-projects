@@ -2,6 +2,7 @@
 Written by Evan Gravelle
 01/22/2018 """
 
+import math
 import numpy as np
 np.set_printoptions(precision=2)
 
@@ -21,45 +22,49 @@ class Player(object):
 
 class TicTacToe(object):
     def __init__(self):
-        self.state = list('.........')
+        self.state = list('         ')
         self.player = Player()
         self.turn = 0
 
     def __str__(self):
-        return ('Turn ' + str(self.turn).upper() + ', ' + self.player.players[self.player.player] + ' gets to go\n\n' +
-                self.board())
+        return (self.board() + '\nTurn ' + str(self.turn + 1) + ', ' + self.player.players[self.player.player].upper() +
+                "\'s turn\n")
 
+    # Returns tuple of (is_terminal, reward)
     def check_state(self):
-        threes = [(self.state[0], self.state[3], self.state[6]),
-                  (self.state[1], self.state[4], self.state[7]),
-                  (self.state[2], self.state[5], self.state[8]),
-                  (self.state[0], self.state[1], self.state[2]),
-                  (self.state[3], self.state[4], self.state[5]),
-                  (self.state[6], self.state[7], self.state[8]),
-                  (self.state[0], self.state[4], self.state[8]),
-                  (self.state[2], self.state[4], self.state[6])]
+        threes = [self.state[0] + self.state[3] + self.state[6],
+                  self.state[1] + self.state[4] + self.state[7],
+                  self.state[2] + self.state[5] + self.state[8],
+                  self.state[0] + self.state[1] + self.state[2],
+                  self.state[3] + self.state[4] + self.state[5],
+                  self.state[6] + self.state[7] + self.state[8],
+                  self.state[0] + self.state[4] + self.state[8],
+                  self.state[2] + self.state[4] + self.state[6]]
         if 'xxx' in threes:
-            return 'x'
+            return True, 1
         elif 'ooo' in threes:
-            return 'o'
-        elif '.' in self.state:
-            return 'p'
+            return True, -1
+        elif ' ' in self.state:
+            return False, 0
         else:
-            return 'c'
+            return True, 0
 
     def play(self, move):
-        self.state[move] = self.player.players[self.player.player]
+        self.state[move] = self.current_player()
         self.player.update_player()
         self.turn += 1
 
     def reset(self):
-        self.state = '.........'
+        self.state = '         '
 
-    def get_hash(self):
-        return hash(tuple(self.state))
+    def get_state(self):
+        return tuple(self.state)
 
     def get_moves(self):
-        return [pos for pos, char in enumerate(self.state) if char == '.']
+        return [pos for pos, char in enumerate(self.state) if char == ' ']
+
+    def pick_move_random(self):
+        return np.random.choice(self.get_moves())
 
     def current_player(self):
         return self.player.current_player()
@@ -70,35 +75,73 @@ class TicTacToe(object):
                 self.state[6] + ' | ' + self.state[7] + ' | ' + self.state[8] + '\n')
 
 
-
-class Tree(object):
+class UCTTree(object):
     def __init__(self):
         self.nodes = {}
+        self.game = TicTacToe()
+        self.nodes[self.game.get_state()]['N'] = 0
+        for move in self.game.get_moves():
+            self.nodes[(self.game.get_state(), move)] = 0
+        self.c_puct = .707
 
-    def add_state(self, s):
-        if s in self.nodes.keys():
-            self.nodes[s]['count'] += 1
-            self.nodes[s]['value'] += 1
-            self.nodes[s]['children'] += 'timmy'
+    def update_state(self, s, a, r):
+        self.nodes[(s, a)]['N'] += 1
+        self.nodes[(s, a)]['Q'] += r
+
+    def add_state(self, s, a):
+        self.nodes[(s, a)] = {'count': 1, 'value': 0}
+
+    def pick_move_uct(self):
+        moves = self.game.get_moves()
+        state = self.game.get_state()
+        scores = [self.nodes[(state, move)]['Q'] / self.nodes[(state, move)]['N'] +
+                  self.c_puct * math.log(self.nodes[(state, move)]['N']) / self.nodes[(state, move)]['N']
+                  for move in moves]
+        return moves[np.argmax(scores)[0]]
+
+    def calc_score(self, s, a):
+        return self.nodes[(s, a)][]
+
+    def tree_rollout(self):
+        terminal, r = self.game.check_state()
+        if self.game.get_state() in self.nodes.keys():
+            if not terminal:
+                self.game.play(self.pick_move_uct)
+                r = self.tree_rollout()
         else:
-            node = {'count': 1, 'value': 0, 'children': []}
-            self.nodes[s] = node
+            if not terminal:
+                self.add_state(s)
+                self.game.play(self.game.pick_move_random())
+                r = self.default_rollout()
+        self.update_state(s, r)
+        return r
+
+    def default_rollout(self):
+        terminal, r = self.game.check_state()
+        if not terminal:
+            self.game.play(self.game.pick_move_random())
+            r = self.default_rollout()
+        self.update_state(s, r)
+        return r
+
+    def search(self):
+        pass
 
 
 if __name__ == "__main__":
 
     ttt = TicTacToe()
     for game in range(1):
-        while ttt.check_state() == 'p':
+        while not ttt.check_state()[0]:
             print(ttt)
             move = np.random.choice(ttt.get_moves())
             ttt.play(move)
         print(ttt.board())
-        final_state = ttt.check_state()
-        if final_state == 'x':
+        final_state = ttt.check_state()[1]
+        if final_state == 1:
             print('VICTORY')
-        elif final_state == 'o':
+        elif final_state == -1:
             print('DEFEAT')
-        elif final_state == 'c':
+        elif final_state == 0:
             print('IT\'S A TIE')
         ttt.reset()
