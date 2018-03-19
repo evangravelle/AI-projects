@@ -36,7 +36,8 @@ class TicTacToe(object):
                 self.players.current_player().upper() + "\'s turn\n")
 
     def check_state(self):
-        """Returns tuple of (is_terminal, reward)."""
+        """Returns tuple of (is_terminal, reward).
+        TODO: if str cat is slow, can use ints 0,1,4 and addition to represent state."""
         threes = [self.state[0] + self.state[3] + self.state[6],
                   self.state[1] + self.state[4] + self.state[7],
                   self.state[2] + self.state[5] + self.state[8],
