@@ -112,6 +112,7 @@ class UCTTree(object):
 
     def update_state(self, s, a, r):
         """Updates the count and reward of a state-action pair."""
+        self.nodes[s]['N'] += 1
         self.nodes[s][a]['N'] += 1
         self.nodes[s][a]['Q'] += r
 
@@ -136,6 +137,7 @@ class UCTTree(object):
         else:
             move_dict = {alg: self.game.pick_move_random}
         s = self.game.get_state()
+        p = self.game.current_player()
         terminal, r = self.game.check_state()
         if s in self.nodes.keys():
             if not terminal:
@@ -150,14 +152,15 @@ class UCTTree(object):
                 self.game.play(a)
                 r = self.tree_rollout()
                 self.update_state(s, a, r)
-        if self.game.current_player() == 'x':
+        if p == 'x':
             return r
         else:
             return -r
 
     def best_move(self):
         """Returns the move which has the highest visit count, a proxy for best move."""
-        counts = np.array([(a, self.nodes[self.game.state][a]['N']) for a in self.nodes[self.game.state].keys])
+        counts = np.array([(a, self.nodes[self.game.get_state()][a]['N'])
+                           for a in self.nodes[self.game.get_state()].keys])
         return counts[np.argmax(counts[:, 1]), 0]
 
 
