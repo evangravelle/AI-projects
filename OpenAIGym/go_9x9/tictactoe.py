@@ -64,10 +64,10 @@ class TicTacToe(object):
     def reset(self, s=None):
         """Resets the board."""
         if s:
-            self.state = s
+            self.state = s.copy()
             self.turn = 9 - s.count(' ')
         else:
-            self.state = '         '
+            self.state = list('         ')
             self.turn = 0
 
     def get_state(self):
@@ -108,7 +108,7 @@ class UCTTree(object):
         """Adds a node to the tree."""
         self.nodes[s] = {'N': 0}
         for a in self.game.get_moves(s):
-            self.nodes[s][a] = {'Q': 0.0, 'N': 0.0}
+            self.nodes[s][a] = {'Q': 0.0, 'N': 0}
 
     def update_state(self, s, a, r):
         """Updates the count and reward of a state-action pair."""
@@ -117,18 +117,18 @@ class UCTTree(object):
         self.nodes[s][a]['Q'] += r
 
     def pick_move_uct(self):
-        """Chooses a move using the UCT algorithm. If any moves haven't been expanded yet,
+        """Chooses a move using the UCT algorithm. If some moves haven't been expanded yet,
         this chooses randomly among them."""
         moves = self.game.get_moves()
         s = self.game.get_state()
         visits = np.array([self.nodes[s][a]['N'] for a in moves])
         if not np.all(visits):
-            return moves[np.random.choice(visits == 0)]
+            return moves[np.random.choice(np.argwhere(visits == 0).flatten())]
         else:
             scores = [self.nodes[s][a]['Q'] / self.nodes[s][a]['N'] +
                       self.cp_uct * math.log(self.nodes[s][a]['N']) / self.nodes[s]['N']
                       for a in moves]
-            return moves[np.random.choice(np.argmax(scores))]
+            return moves[np.random.choice(np.argwhere(scores == np.max(scores)).flatten())]
 
     def tree_rollout(self, alg='uct'):
         """Executes rollout using UCT algorithm, recursively updating rewards and counts."""
@@ -145,6 +145,11 @@ class UCTTree(object):
                 self.game.play(a)
                 r = self.tree_rollout()
                 self.update_state(s, a, r)
+            else:
+                if p == 'x':
+                    return r
+                else:
+                    return -r
         else:
             if not terminal:
                 self.add_node(s)
@@ -152,16 +157,18 @@ class UCTTree(object):
                 self.game.play(a)
                 r = self.tree_rollout()
                 self.update_state(s, a, r)
-        if p == 'x':
-            return r
-        else:
-            return -r
+            else:
+                if p == 'x':
+                    return r
+                else:
+                    return -r
+        return r
 
     def best_move(self):
         """Returns the move which has the highest visit count, a proxy for best move."""
         counts = np.array([(a, self.nodes[self.game.get_state()][a]['N'])
-                           for a in self.nodes[self.game.get_state()].keys])
-        return counts[np.argmax(counts[:, 1]), 0]
+                          for a in self.nodes[self.game.get_state()] if isinstance(a, int)])
+        return np.random.choice(counts[np.argwhere(counts[:, 1] == np.max(counts[:, 1])), 0].flatten())
 
 
 def play_random_game():
@@ -192,6 +199,7 @@ def play_uct_game():
             uct.tree_rollout()
             uct.game.reset(ttt.state)
         next_move = uct.best_move()
+        print(next_move)  # TEMp
         ttt.play(next_move)
     print(ttt.board())
     final_state = ttt.check_state()[1]
