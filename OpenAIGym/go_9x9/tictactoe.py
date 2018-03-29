@@ -10,16 +10,16 @@ np.set_printoptions(precision=2)
 class Player(object):
     def __init__(self):
         """Initializes player 1 to x."""
-        self.player = 0
+        self.player = 1
         self.players = 'xo'
 
     def current_player(self):
         """Returns current player."""
-        return self.players[self.player]
+        return self.players[self.player - 1]
 
     def update_player(self):
         """Updates the player, returns new player."""
-        self.player = (self.player + 1) % 2
+        self.player = self.player % 2 + 1
         return self.current_player()
 
 
@@ -199,9 +199,32 @@ def play_uct_game():
             uct.tree_rollout()
             uct.game.reset(ttt.state)
         next_move = uct.best_move()
-        print(next_move)  # TEMp
         ttt.play(next_move)
     print(ttt.board())
+    final_state = ttt.check_state()[1]
+    if final_state == 1:
+        print('VICTORY')
+    elif final_state == -1:
+        print('DEFEAT')
+    elif final_state == 0:
+        print('IT\'S A TIE')
+    ttt.reset()
+
+
+def play_uct_with_human():
+    """Plays game of tic-tac-toe vs human using UCT."""
+    ttt = TicTacToe()
+    uct = UCTTree()
+    while not ttt.check_state()[0]:
+        print(ttt)
+        ttt.play(input('Enter a move:'))
+        print(ttt)
+        for i in range(1000):
+            uct.tree_rollout()
+            uct.game.reset(ttt.state)
+        next_move = uct.best_move()
+        ttt.play(next_move)
+    print(ttt)
     final_state = ttt.check_state()[1]
     if final_state == 1:
         print('VICTORY')
