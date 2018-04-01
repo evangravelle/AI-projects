@@ -134,11 +134,11 @@ class UCTTree(object):
         else:
             if self.game.current_player() == 'x':
                 scores = [self.nodes[s][a]['Q'] / self.nodes[s][a]['N'] +
-                          self.cp_uct * np.sqrt(math.log(self.nodes[s][a]['N']) / self.nodes[s]['N'])
+                          self.cp_uct * np.sqrt(math.log(self.nodes[s]['N']) / self.nodes[s][a]['N'])
                           for a in moves]
             else:
                 scores = [-self.nodes[s][a]['Q'] / self.nodes[s][a]['N'] +
-                          self.cp_uct * np.sqrt(math.log(self.nodes[s][a]['N']) / self.nodes[s]['N'])
+                          self.cp_uct * np.sqrt(math.log(self.nodes[s]['N']) / self.nodes[s][a]['N'])
                           for a in moves]
             return moves[np.random.choice(np.argwhere(scores == np.max(scores)).flatten())]
 
@@ -158,11 +158,7 @@ class UCTTree(object):
                 r = self.tree_rollout()
                 self.update_state(s, a, r)
             else:
-                # If it's x's turn, then o just won or drew
-                if p == 'x':
-                    return -r
-                else:
-                    return r
+                return r
         else:
             if not terminal:
                 self.add_node(s)
@@ -171,10 +167,7 @@ class UCTTree(object):
                 r = self.tree_rollout()
                 self.update_state(s, a, r)
             else:
-                if p == 'x':
-                    return -r
-                else:
-                    return r
+                return r
         return r
 
     def best_move(self):
@@ -229,24 +222,30 @@ def play_uct_with_human():
     ttt = TicTacToe()
     uct = UCTTree()
     while not ttt.check_state()[0]:
-        print(ttt)
-        ttt.play(input('Enter a move:'))
-        print(ttt)
-        for i in range(1000):
-            uct.tree_rollout()
-            uct.game.reset(ttt.state)
-        next_move = uct.best_move()
-        ttt.play(next_move)
+        if ttt.current_player() == 'x':
+            print(ttt)
+            for i in range(1000):
+                uct.tree_rollout()
+                uct.game.reset(ttt.state)
+            next_move = uct.best_move()
+            ttt.play(next_move)
+        else:
+            print(ttt)
+            moves = ttt.get_moves()
+            move = int(input('Enter a move (row-major indices): '))
+            while move not in moves:
+                move = int(input('Illegal move, try again: '))
+            ttt.play(move)
     print(ttt)
     final_state = ttt.check_state()[1]
     if final_state == 1:
-        print('VICTORY')
+        print('X WINS')
     elif final_state == -1:
-        print('DEFEAT')
+        print('O WINS')
     elif final_state == 0:
         print('IT\'S A TIE')
     ttt.reset()
 
 
 if __name__ == "__main__":
-    play_uct_game()
+    play_uct_with_human()
