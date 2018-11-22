@@ -40,9 +40,6 @@ http://www.incompleteideas.net/book/bookdraft2017nov5.pdf
 https://www.tensorflow.org/guide/eager  
 https://github.com/deepmind/trfl/blob/master/docs/index.md  
 https://github.com/hill-a/stable-baselines  
-https://ai.googleblog.com/2018/10/see-better-and-further-with-super-res.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+blogspot%2FgJZg+%28Google+AI+Blog%29  
-https://ai.googleblog.com/2018/10/fluid-annotation-exploratory-machine.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+blogspot%2FgJZg+%28Google+AI+Blog%29  
-https://ai.googleblog.com/2018/10/introducing-adanet-fast-and-flexible.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+blogspot%2FgJZg+%28Google+AI+Blog%29  
 https://blog.openai.com/reinforcement-learning-with-prediction-based-rewards/  
 https://blog.openai.com/learning-concepts-with-energy-functions/  
 https://blog.openai.com/spinning-up-in-deep-rl/  
