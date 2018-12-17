@@ -34,8 +34,6 @@ Parallelization ideas:
 - update the same tree with mutliple threads, using locks
 
 TODO:
-https://jobs.lever.co/openai/a0d3b158-14a0-48db-b38c-1c94bb18f69b  
-https://careers.google.com/jobs/results/6118786463498240-google-ai-resident-2019-start-fixed-term-employee/?jlo=en_US&q=Google%20AI%20Residency,%202019  
 http://www.incompleteideas.net/book/bookdraft2017nov5.pdf  
 https://www.tensorflow.org/guide/eager  
 https://github.com/deepmind/trfl/blob/master/docs/index.md  
@@ -47,4 +45,6 @@ https://www.youtube.com/watch?v=5P7I-xPq8u8
 https://arxiv.org/pdf/1705.08439.pdf  
 https://eng.uber.com/ai-residency-2019/  
 https://github.com/google/dopamine  
+https://github.com/tensorflow/adanet  
+https://github.com/deepmind/pysc2  
 
