@@ -72,19 +72,19 @@ np.set_printoptions(precision=4)
 if os.path.isfile(iteration_filename):
     with open(iteration_filename) as iter_file:
         total_iter = int(iter_file.read())
-    print 'Loaded total_iter = ', total_iter
+    print('Loaded total_iter = ', total_iter)
 else:
     total_iter = 0
 if os.path.isfile(ep_filename):
     with open(ep_filename) as ep_file:
         start_ep = int(ep_file.read())
-    print 'Loaded start_ep = ', start_ep
+    print('Loaded start_ep = ', start_ep)
 else:
     start_ep = 0
 if os.path.isfile(replay_filename):
     with open(replay_filename, 'rb') as replay_file:
         replay_memory = pickle.load(replay_file)
-    print 'Loaded replay_memory'
+    print('Loaded replay_memory')
 
 # Initialize epsilon, which linearly decreases then remains constant
 if total_iter <= epsilon_cutoff:
@@ -123,26 +123,26 @@ y = tf.placeholder(tf.float32, shape=[None])
 
 # First layer is max pooling to reduce the image to (?, 82, 80, 4)
 h_pool0 = -tf.nn.max_pool(-s, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-print "h_pool0 = ", h_pool0
+print("h_pool0 = ", h_pool0)
 
 # Second layer is 16 8x8 convolutions followed by ReLU (?, 21, 20, 64)
 W_conv1 = tf.Variable(tf.truncated_normal([8, 8, 4, 16], mean=0.0, stddev=tf.sqrt(2./64.)))
 b_conv1 = tf.Variable(tf.constant(0.0, shape=[16]))
 h_conv1 = tf.nn.relu(tf.nn.conv2d(h_pool0, W_conv1, strides=[1, 4, 4, 1], padding='SAME') + b_conv1)
-print "h_conv1 = ", h_conv1
+print("h_conv1 = ", h_conv1)
 
 # Third layer is 32 4x4 convolutions followed by ReLU (?, 11, 10, 128)
 W_conv2 = tf.Variable(tf.truncated_normal([4, 4, 16, 32], mean=0.0, stddev=tf.sqrt(2./16.)))
 b_conv2 = tf.Variable(tf.constant(0.0, shape=[32]))
 h_conv2 = tf.nn.relu(tf.nn.conv2d(h_conv1, W_conv2, strides=[1, 2, 2, 1], padding='SAME') + b_conv2)
-print "h_conv2 = ", h_conv2
+print("h_conv2 = ", h_conv2)
 
 # Fourth layer is fully connected layer followed by ReLU, with arbitrary choice of 256 neurons
 W_fc1 = tf.Variable(tf.truncated_normal([11 * 10 * 32, 256], mean=0.0, stddev=tf.sqrt(2.0/(11*10*32))))
 b_fc1 = tf.Variable(tf.constant(0.0, shape=[256]))
 h_conv2_flat = tf.reshape(h_conv2, [-1, 11 * 10 * 32])
 h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1) + b_fc1)
-print "h_fc1 = ", h_fc1
+print("h_fc1 = ", h_fc1)
 
 # Fifth layer is output
 # keep_prob = tf.placeholder(tf.float32)
@@ -150,7 +150,7 @@ print "h_fc1 = ", h_fc1
 W_fc2 = tf.Variable(tf.truncated_normal([256, num_actions], mean=0.0, stddev=tf.sqrt(2.0/256.)))
 b_fc2 = tf.Variable(tf.constant(0.0, shape=[num_actions]))
 Q_vals = tf.matmul(h_fc1, W_fc2) + b_fc2
-print "Q_vals = ", Q_vals
+print("Q_vals = ", Q_vals)
 
 # Loss function is average (over mini-batch) mean squared error
 loss = tf.reduce_mean((y - tf.matmul(Q_vals, tf.transpose(tf.one_hot(a, num_actions)))) ** 2, reduction_indices=[1])
@@ -169,18 +169,18 @@ sess2 = tf.Session()
 saver = tf.train.Saver()
 if os.path.isfile(checkpoint_filename):
     saver.restore(sess1, checkpoint_filename)
-    print 'Model restored to sess1 from', checkpoint_filename
+    print('Model restored to sess1 from', checkpoint_filename)
     saver.restore(sess2, checkpoint_filename)
-    print 'Model restored to sess2 from', checkpoint_filename
+    print('Model restored to sess2 from', checkpoint_filename)
 else:
     # with sess2.as_default():
     sess1.run(tf.initialize_all_variables())
-    print 'Model initialized in sess1', checkpoint_filename
+    print('Model initialized in sess1', checkpoint_filename)
     saver.save(sess1, checkpoint_filename)
-    print 'Model from sess1 saved in', checkpoint_filename
+    print('Model from sess1 saved in', checkpoint_filename)
     # with sess1.as_default():
     saver.restore(sess2, checkpoint_filename)
-    print 'Model restored to sess2 from', checkpoint_filename, '\n'
+    print('Model restored to sess2 from', checkpoint_filename, '\n')
 
 
 # LOAD OR CREATE HOLD OUT SET
@@ -221,7 +221,7 @@ else:
 avg_score = 0.0
 ep = start_ep
 while ep < start_ep + num_episodes:
-    print "episode ", ep
+    print("episode ", ep)
     # Assumes no reward is obtained in first 4 frames
     replay_ind = total_iter % memory_cap
     replay_memory[0][replay_ind, :, :, 0] = reduce_image(env.reset())
@@ -295,16 +295,16 @@ while ep < start_ep + num_episodes:
             if total_iter % 1 == 0:
                 prev_Q_vals_arr_after = sess1.run(Q_vals, feed_dict={
                   s: replay_memory[0][current_replays, :, :, :].reshape(current_batch_size, reduced_rows, num_cols, 4)})
-                print 'total_iter = ', total_iter
-                print 'reward = ', replay_memory[2][current_replays[ind]]
-                print 'Q_vals_arr = ', Q_vals_arr[ind, :]
-                print 'target_vals_arr = ', target_vals_arr[ind, :]
-                # print 'Q_max = ', Q_max[ind]
-                # print 'nt = ', nt[ind]
-                print 'target = ', target[ind]
-                print 'action = ', replay_memory[1][current_replays[ind]]
-                print 'previous_Q_vals = ', prev_Q_vals_arr[ind, :]
-                print 'Q_vals_delta =    ', prev_Q_vals_arr_after[ind, :] - prev_Q_vals_arr[ind, :], '\n'
+                print('total_iter = ', total_iter)
+                print('reward = ', replay_memory[2][current_replays[ind]])
+                print('Q_vals_arr = ', Q_vals_arr[ind, :])
+                print('target_vals_arr = ', target_vals_arr[ind, :])
+                # print('Q_max = ', Q_max[ind])
+                # print('nt = ', nt[ind])
+                print('target = ', target[ind])
+                print('action = ', replay_memory[1][current_replays[ind]])
+                print('previous_Q_vals = ', prev_Q_vals_arr[ind, :])
+                print('Q_vals_delta =    ', prev_Q_vals_arr_after[ind, :] - prev_Q_vals_arr[ind, :], '\n')
 
         # After save_variables_time iterations, save variables and statistics
         if total_iter % save_variables_time == 0 and total_iter != 0:
@@ -316,11 +316,10 @@ while ep < start_ep + num_episodes:
         # After target_fix_time iterations, fix new parameters for target
         if total_iter % target_fix_time == 0 and total_iter != 0:
             saver.save(sess1, checkpoint_filename)
-            print 'Model from sess1 saved in', checkpoint_filename
+            print('Model from sess1 saved in', checkpoint_filename)
             if os.path.isfile(checkpoint_filename):
                 saver.restore(sess2, checkpoint_filename)
-                print 'Model restored to sess2 from', checkpoint_filename
-            avg_max_Q = 0.
+                print('Model restored to sess2 from', checkpoint_filename)
             hold_out_vals_arr = sess1.run(Q_vals, feed_dict={s: hold_out_set.reshape(-1, reduced_rows, num_cols, 4)})
             avg_max_Q = np.sum(np.amax(hold_out_vals_arr, axis=1)) / hold_out_length
             with open(Q_filename, 'a') as Q_file:
