@@ -20,6 +20,7 @@ https://www.udacity.com/course/reinforcement-learning--ud600
 https://www.youtube.com/playlist?list=PL5X3mDkKaJrL42i_jhE4N-p6E2Ol62Ofa  
 https://www.youtube.com/watch?v=aUrX-rP_ss4  
 https://www.youtube.com/watch?v=vT1JzLTH4G4&index=1&list=PL3FW7Lu3i5JvHM8ljYj-zLfQRF3EO8sYv  
+https://sites.google.com/view/deep-rl-bootcamp/lectures  
 
 Go sources:
 
