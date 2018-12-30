@@ -48,4 +48,4 @@ https://eng.uber.com/ai-residency-2019/
 https://github.com/google/dopamine  
 https://github.com/tensorflow/adanet  
 https://github.com/deepmind/pysc2  
-
+http://chris-chris.ai/2017/08/30/pysc2-tutorial1/  
