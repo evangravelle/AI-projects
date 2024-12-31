@@ -2,11 +2,13 @@
 NODE
 """
 
-import game_state
+import gui
+
 
 def main():
-    state = game_state.GameState()
+    window = gui.create_window()
+    gui.event_loop(window)
 
 
-if __name__ == "main":
+if __name__ == "__main__":
     main()

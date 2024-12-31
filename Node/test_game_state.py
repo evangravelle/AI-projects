@@ -17,7 +17,7 @@ class TestGameState(unittest.TestCase):
 
     def test_score(self):
         state = game_state.GameState()
-        score = state.check_score()
+        score = state.get_score()
         self.assertEqual(score, (0,0))
 
     def test_playable_roads(self):
