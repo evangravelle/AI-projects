@@ -48,14 +48,16 @@ def create_board(window):
     # print("BOARD VALUES")
     # print(state.board.values())
 
-    asset_dir = "C:\\Users\\evang\\Desktop\\node assets\\"
+    asset_dir = "C:\\Users\\evang\\Desktop\\git\\AI-projects\\Node\\assets\\"
     graph = window["-GRAPH-"]
     for sq_key, sq_val in state.board.items():
         x = WINDOW_SIDE_BUFFER + sq_key[0] * SQUARE_LEN
-        y = WINDOW_SIDE_BUFFER + sq_key[1] * SQUARE_LEN
+        y = 2 * WINDOW_SIDE_BUFFER + sq_key[1] * SQUARE_LEN
         print("X = " + str(x))
         print("Y = " + str(y))
         filepath = asset_dir + SQUARE_FILENAME[sq_val]
+
+        # location of top left corner of image
         graph.draw_image(filename=filepath, location=(x, y))
 
 
