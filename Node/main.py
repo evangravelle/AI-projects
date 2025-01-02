@@ -11,4 +11,5 @@ def main():
 
 
 if __name__ == "__main__":
+    # sg.main_sdk_help()
     main()
