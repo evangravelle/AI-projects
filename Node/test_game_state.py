@@ -4,7 +4,11 @@ import gui
 import unittest
 
 
+HEADLESS = True
+
+
 def draw_roads_event_loop(window, button_str):
+    graph = None
     mode = "INIT"
     road_ids = []
     road_keys = game_state.playable_roads.keys()
@@ -32,10 +36,9 @@ def draw_roads_event_loop(window, button_str):
 
 
 def clear_roads(graph, road_ids):
-    print(road_ids)
     for road_id in road_ids:
         graph.delete_figure(road_id)
-        print("DELETED FIGURE")
+
 
 def draw_roads(graph, roads, road_ids):
     for road in roads:
@@ -43,23 +46,25 @@ def draw_roads(graph, roads, road_ids):
         road_ids.append(road_id)
     return road_ids
 
+
 class TestGameState(unittest.TestCase):
+
+    def test_initial_moves(self):
+        self.assertTrue(False)
 
     def test_game_state(self):
         state = game_state.GameState()
-        state.update("p1", [])
-        self.assertEqual(state.nodes["p1"], [])
-        self.assertEqual(state.roads["p1"], [])
-        state.update("p2", [(0, 2), ((0, 2), (0, 3))])
-        self.assertEqual(
-            state.nodes["p2"],
-            [
-                (0, 2),
-            ],
-        )
-        self.assertEqual(state.roads["p2"], [((0, 2), (0, 3))])
+        player = 0
+        state.update(player=player, move=[])
+        self.assertEqual(state.nodes[player], [])
+        self.assertEqual(state.roads[player], [[]])
+        player = 1
+        state.update(player=player, move=[(0, 2), (0, 2.5)])
+        self.assertEqual(state.nodes[player], [(0, 2)])
+        self.assertEqual(state.roads[player], [(0, 2.5)])
+        player = 0
         with self.assertRaises(AssertionError):
-            state.update("p1", [(0, 2), ((1, 1), (1, 2), (1, 3))])
+            state.update(player=player, move=[(0, 2), (1, 2, 3)])
 
     def test_score(self):
         state = game_state.GameState()
@@ -69,9 +74,10 @@ class TestGameState(unittest.TestCase):
     def test_playable_roads(self):
         self.assertEqual(len(game_state.playable_roads.keys()), 36)
 
-        button_str = "Draw Adjacent Roads"
-        window = gui.create_window()
-        draw_roads_event_loop(window, button_str)
+        if not HEADLESS:
+            button_str = "Draw Adjacent Roads"
+            window = gui.create_window()
+            draw_roads_event_loop(window, button_str)
 
     def test_get_playable_nodes(self):
         roads = []

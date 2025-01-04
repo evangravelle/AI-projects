@@ -1,12 +1,12 @@
 import FreeSimpleGUI as sg
 import game_state
 
-SQUARE_LEN = 128
-WINDOW_SIDE_BUFFER = 128
-GRAPH_LEN = 5 * SQUARE_LEN + 2 * WINDOW_SIDE_BUFFER
-NODE_RADIUS = int(0.17 * SQUARE_LEN)
-ROAD_LEN = int(0.58 * SQUARE_LEN)
-ROAD_WIDTH = int(0.1 * SQUARE_LEN)
+SQUARE_LEN = 128  # pixels
+WINDOW_SIDE_BUFFER = 128  # pixels
+GRAPH_LEN = 5 * SQUARE_LEN + 2 * WINDOW_SIDE_BUFFER  # pixels
+NODE_RADIUS = int(0.17 * SQUARE_LEN)  # pixels
+ROAD_LEN = int(0.58 * SQUARE_LEN)  # pixels
+ROAD_WIDTH = int(0.1 * SQUARE_LEN)  # pixels
 
 SQUARE_FILENAME = {
     "blank": "grey.png",
@@ -32,6 +32,13 @@ def coord_to_pix(coordinates):
     )
 
 
+def pix_to_coord(pix):
+    return (
+        (pix[0] - WINDOW_SIDE_BUFFER) / SQUARE_LEN,
+        (pix[1] - WINDOW_SIDE_BUFFER) / SQUARE_LEN,
+    )
+
+
 def create_window(button_str="Create Board"):
     layout = [
         [
@@ -39,6 +46,7 @@ def create_window(button_str="Create Board"):
                 canvas_size=(GRAPH_LEN, GRAPH_LEN),
                 graph_bottom_left=(0, 0),
                 graph_top_right=(GRAPH_LEN, GRAPH_LEN),
+                enable_events=True,
                 key="-GRAPH-",
             )
         ],
@@ -46,6 +54,7 @@ def create_window(button_str="Create Board"):
     ]
 
     window = sg.Window(title="Node", layout=layout)
+
     return window
 
 
@@ -69,11 +78,17 @@ def draw_board(window, rng_seed=0):
         # sg.Graph.draw_rectangle()
         # draw_road(graph=graph, coord=(2, 1.5), color="orange")
 
+    # Create buttons
+    # draw_node(graph, coord=(2, 2), color="orange")
+
+    return state
 
 def draw_node(graph, coord, color):
     pix = coord_to_pix(coord)
     line_width = 4
-    node_id = graph.draw_circle(pix, radius=NODE_RADIUS, fill_color=color, line_width=line_width)
+    node_id = graph.draw_circle(
+        pix, radius=NODE_RADIUS, fill_color=color, line_width=line_width
+    )
     return node_id
 
 
@@ -105,17 +120,48 @@ def draw_road(graph, coord, color):
     return road_id
 
 
+def is_inside_circle(pix, center, radius):
+    return (pix[0] - center[0]) ** 2 + (pix[1] - center[1]) ** 2 <= radius**2
+
+
+def handle_graph_event(graph, pix):
+    node_coord = (2, 2)
+    if is_inside_circle(pix, coord_to_pix(node_coord), radius=NODE_RADIUS):
+        draw_node(graph, node_coord, color="orange")
+        return node_coord
+
+    return None
+
+
 def event_loop(window):
+    state = None
+    player = 1
+    new_roads = []
+    new_nodes = []
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == "Exit":
             break
 
-        if event == "-BUTTON-":
-            import time
+        elif event == "-BUTTON-":
+            if window["-BUTTON-"].ButtonText == "Create Board":
+                import time
+                ms = int(time.time() * 1000.0)
+                state = draw_board(window, rng_seed=ms)
+                window["-BUTTON-"].update(text="Finish Move")
 
-            ms = int(time.time() * 1000.0)
-            draw_board(window, rng_seed=ms)
+            elif window["-BUTTON-"].ButtonText == "Finish Move":
+                state.nodes[player].append(node for node in new_nodes)
+                state.roads[player].append(road for road in new_roads)
+
+        elif event == "-GRAPH-":
+            # print(f"GRAPH EVENT, VALUE = {values["-GRAPH-"]}")
+            new_piece = handle_graph_event(window["-GRAPH-"], values["-GRAPH-"])
+            if new_piece is not None:
+                if piece_is_node(new_piece):
+                    new_nodes.append(new_piece)
+                else:
+                    new_roads.append(new_piece)
 
     window.close()
 
@@ -126,5 +172,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # sg.main_sdk_help()
+    sg.main_sdk_help()
     main()

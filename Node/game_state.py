@@ -68,6 +68,11 @@ def get_playable_nodes(roads):
     return sorted_list
 
 
+def piece_is_node(piece):
+    p_sum = piece[0] + piece[1]
+    return p_sum - int(p_sum) == 0
+
+
 def create_random_board(rng_seed):
     tiles = [
         "blank",
@@ -105,52 +110,55 @@ def create_random_board(rng_seed):
     return board
 
 
+"""
+Move contains a list of nodes/roads. A node is a pair of whole numbers,
+a road is a pair with one number with 0.5.
+"""
 class GameState:
     def __init__(self, rng_seed=0):
         self.board = create_random_board(rng_seed)
-        self.nodes = {"p1": [], "p2": []}
-        self.roads = {"p1": [], "p2": []}
-        self.p1 = {"y": 0, "g": 0, "r": 0, "b": 0}
-        self.p2 = {"y": 0, "g": 0, "r": 0, "b": 0}
+        self.nodes = [[], []]
+        self.roads = [[[]], [[]]]  # First index is player, 2nd index is road group
+        self.resources = [
+            {"y": 0, "g": 0, "r": 0, "b": 0},
+            {"y": 0, "g": 0, "r": 0, "b": 0},
+        ]
 
-    """
-    Move contains a list of nodes/roads. A node is a pair, a road is a pair of pairs
-    """
+    def initial_move(self, player, move, number):
+        for piece in move:
+            assert isinstance(piece, tuple) and len(piece) == 2
+            if piece_is_node(piece):
+                self.nodes[player].append(piece)
+            else:
+                self.roads[player][number].append(piece)
 
     def update(self, player, move):
         for piece in move:
             assert isinstance(piece, tuple) and len(piece) == 2
-            if not isinstance(piece[0], tuple):
-                assert len(piece) == 2
+            if piece_is_node(piece):
                 self.nodes[player].append(piece)
             else:
-                assert len(piece[0]) == 2 and len(piece[1]) == 2
+                # TODO: figure out which group to add this road to
                 self.roads[player].append(piece)
 
     def get_score(self):
-        p1_score = len(self.nodes["p1"])
-        p2_score = len(self.nodes["p2"])
+        scores = (len(self.nodes[0]), len(self.nodes[1]))
 
         # Check the number of groups before computing the max group size
-        if len(self.roads["p1"]) == 2:
-            p1_max_group_size = max(len(self.roads["p1"][0]), len(self.roads["p1"][1]))
-        elif len(self.roads["p1"]) > 0:
-            p1_max_group_size = len(self.roads["p1"][0])
-        else:
-            p1_max_group_size = 0
+        max_group_sizes = [0, 0]
+        for p in range(0, 2):
+            if len(self.roads[p]) == 2:
+                max_group_sizes[p] = max(len(self.roads[p][0]), len(self.roads[p][1]))
+            elif len(self.roads[p]) == 1:
+                max_group_sizes[p] = len(self.roads[p][0])
+            else:
+                max_group_sizes[p] = 0
 
-        if len(self.roads["p2"]) == 2:
-            p2_max_group_size = max(len(self.roads["p2"][0]), len(self.roads["p2"][1]))
-        elif len(self.roads["p1"]) > 0:
-            p2_max_group_size = len(self.roads["p2"][0])
-        else:
-            p2_max_group_size = 0
-
-        if p1_max_group_size > p2_max_group_size:
-            p1_score += 2
-        elif p2_max_group_size > p1_max_group_size:
-            p2_score += 2
-        return p1_score, p2_score
+        if max_group_sizes[0] > max_group_sizes[1]:
+            scores[0] += 2
+        elif max_group_sizes[0] > max_group_sizes[1]:
+            scores[1] += 2
+        return scores
 
     @staticmethod
     def get_available_moves(game_state):

@@ -1,0 +1,19 @@
+- Add clickable invisible buttons to play moves, then separate button for "Finish Turn"
+  - Clicking a button should toggle showing the correct piece in the correct color
+    - Do nothing if the resources aren't available
+- Update players' resources after p2 goes
+- Add some specific game state unit tests, using the screenshots Caitlin sent
+  - Use these states later to make sure AI can find the right move
+- GameState needs findValidMoves() function
+  - Depending on resources, this will need to be called multiple times e.g. building a chain of roads
+- Check with every new road if there are 1 or 2 subgraphs for a player
+- Update should verify validity of a move
+- When a space is overloaded, it shouldn't output resources to either player
+- When a space is surrounded, it shouldn't output a resource to the other player, and this nullifies overloading
+- Add move to trade 3-for-1, once per turn
+- AI priorities
+  - Pick random valid single move
+  - Pick random valid move that uses up the most resources
+  - Monte Carlo Tree Search
+  - UCT or minimax or alpha/beta?
+  - TBD
