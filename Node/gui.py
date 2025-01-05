@@ -148,17 +148,17 @@ def event_loop(window):
                 import time
                 ms = int(time.time() * 1000.0)
                 state = draw_board(window, rng_seed=ms)
-                window["-BUTTON-"].update(text="Finish Move")
+                window["-BUTTON-"].move(text="Finish Move")
 
             elif window["-BUTTON-"].ButtonText == "Finish Move":
-                state.nodes[player].append(node for node in new_nodes)
-                state.roads[player].append(road for road in new_roads)
+                state.nodes[player] += new_nodes
+                state.roads[player] += new_roads
 
         elif event == "-GRAPH-":
             # print(f"GRAPH EVENT, VALUE = {values["-GRAPH-"]}")
             new_piece = handle_graph_event(window["-GRAPH-"], values["-GRAPH-"])
             if new_piece is not None:
-                if piece_is_node(new_piece):
+                if game_state.piece_is_node(new_piece):
                     new_nodes.append(new_piece)
                 else:
                     new_roads.append(new_piece)

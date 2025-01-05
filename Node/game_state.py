@@ -110,36 +110,92 @@ def create_random_board(rng_seed):
     return board
 
 
+def are_roads_connected(group1, group2):
+    return False
+
+
+def all_unique(lst):
+    return len(lst) == len(set(lst))
+
+
 """
 Move contains a list of nodes/roads. A node is a pair of whole numbers,
 a road is a pair with one number with 0.5.
 """
+
+
 class GameState:
     def __init__(self, rng_seed=0):
         self.board = create_random_board(rng_seed)
         self.nodes = [[], []]
-        self.roads = [[[]], [[]]]  # First index is player, 2nd index is road group
+        self.roads = [[[], []], [[], []]]  # 1st index is player, 2nd index is road group
+        self.turn = 1
         self.resources = [
             {"y": 0, "g": 0, "r": 0, "b": 0},
             {"y": 0, "g": 0, "r": 0, "b": 0},
         ]
 
-    def initial_move(self, player, move, number):
+    def is_move_valid(self, player, move):
+        # Inputs must be in the expected format
         for piece in move:
-            assert isinstance(piece, tuple) and len(piece) == 2
-            if piece_is_node(piece):
-                self.nodes[player].append(piece)
-            else:
-                self.roads[player][number].append(piece)
+            if not isinstance(piece, tuple):
+                print(f"Move invalid because piece {piece} is not a tuple.")
+                return False
+            if len(piece) != 2:
+                print(f"Move invalid because length of piece {piece} is not 2.")
+                return False
 
-    def update(self, player, move):
+        # Roads should have an empty set in first 2 turns for each player
+        if self.turn < 5:
+            if len(self.roads[player][0]) != 0 and len(self.roads[player][1]) != 0:
+                print(
+                    f"Move invalid because both road sets {self.roads[player][0]} and "
+                    f"{self.roads[player][1]} are not empty during first 2 turns."
+                )
+                return False
+
+        # Node and road locations must be unoccupied.
+        all_pieces = (
+            self.nodes[0] + self.nodes[1] + self.roads[0][0] + self.roads[0][1] + self.roads[1][0] + self.roads[1][1]
+        )
+        if not all_unique(all_pieces + move):
+            print(f"Move invalid because not all pieces {all_pieces + move} are unique.")
+            return False
+
+        # Nodes must be connected to one of the road networks.
+
+        # Roads must be connected to one of the road networks.
+
+        # If we made it this far, move is valid.
+        return True
+
+    def move(self, player, move):
+        if not self.is_move_valid(player, move):
+            raise Exception("Move is not valid.")
+
         for piece in move:
-            assert isinstance(piece, tuple) and len(piece) == 2
             if piece_is_node(piece):
                 self.nodes[player].append(piece)
             else:
-                # TODO: figure out which group to add this road to
-                self.roads[player].append(piece)
+                if self.turn < 5:
+                    assert len(self.roads[player][0]) == 0 or len(self.roads[player][1]) == 0
+                    if len(self.roads[player][0]) == 0:
+                        self.roads[player][0].append(piece)
+                    else:
+                        if are_roads_connected(self.roads[player][0], piece):
+                            self.roads[player][0].append(piece)
+                        else:
+                            self.roads[player][1].append(piece)
+                else:
+                    if are_roads_connected(self.roads[player][0], piece):
+                        self.roads[player][0].append(piece)
+                    else:
+                        self.roads[player][1].append(piece)
+
+        self.nodes[player].sort()
+        self.roads[player][0].sort()
+        self.roads[player][1].sort()
+        self.turn += 1
 
     def get_score(self):
         scores = (len(self.nodes[0]), len(self.nodes[1]))
