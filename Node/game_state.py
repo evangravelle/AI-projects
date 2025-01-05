@@ -145,8 +145,13 @@ class GameState:
                 print(f"Move invalid because length of piece {piece} is not 2.")
                 return False
 
-        # Roads should have an empty set in first 2 turns for each player
         if self.turn < 5:
+            # First 2 turns for each player should have exactly one node and one road
+            if len(move) != 2 or not (piece_is_node(move[0]) ^ piece_is_node(move[1])):
+                print(f"Move {move} invalid because first 2 turns should have 1 node and 1 road.")
+                return False
+
+            # Roads should have an empty set in first 2 turns for each player
             if len(self.roads[player][0]) != 0 and len(self.roads[player][1]) != 0:
                 print(
                     f"Move invalid because both road sets {self.roads[player][0]} and "
@@ -159,12 +164,12 @@ class GameState:
             self.nodes[0] + self.nodes[1] + self.roads[0][0] + self.roads[0][1] + self.roads[1][0] + self.roads[1][1]
         )
         if not all_unique(all_pieces + move):
-            print(f"Move invalid because not all pieces {all_pieces + move} are unique.")
+            print(f"Move invalid because not all pieces {sorted(all_pieces + move)} are unique.")
             return False
 
-        # Nodes must be connected to one of the road networks.
+        # Nodes must be connected to one of the correct player's road networks.
 
-        # Roads must be connected to one of the road networks.
+        # Roads must be connected to one of the correct player's road networks.
 
         # If we made it this far, move is valid.
         return True

@@ -55,65 +55,81 @@ class TestGameState(unittest.TestCase):
         state.move(player=player, move=[(0, 2), (0, 2.5)])
         self.assertEqual(state.nodes[player], [(0, 2)])
         self.assertEqual(state.roads[player], [[(0, 2.5)], []])
+        # Invalid inputs
         with self.assertRaises(Exception):
-            # Invalid inputs
             state.move(player=1, move=[(), (0, 2.5)])
+        with self.assertRaises(Exception):
             state.move(player=2, move=[(1,), ()])
+        with self.assertRaises(Exception):
             state.move(player=1, move=[(1, 1), ()])
+        with self.assertRaises(Exception):
             state.move(player=2, move=[(1, 1), (3,)])
+        with self.assertRaises(Exception):
             state.move(player=1, move=[(1, 1), (1, 2, 3)])
-            # Moves that are already on the board
+        # Moves that are already on the board
+        with self.assertRaises(Exception):
             state.move(player=1, move=[(0, 2), (1, 2.5)])
+        with self.assertRaises(Exception):
             state.move(player=2, move=[(0, 2), (1, 2.5)])
+        with self.assertRaises(Exception):
             state.move(player=1, move=[(1, 2), (0, 2.5)])
+        with self.assertRaises(Exception):
             state.move(player=2, move=[(1, 2), (0, 2.5)])
 
     def test_valid_initial_moves(self):
         state = game_state.GameState()
         player = 0
-        state.move(player=player, move=[(2, 2), (2.5, 2)])
+        state.move(player=player, move=[(2, 2), (2, 1.5)])
         self.assertEqual(state.nodes[player], [(2, 2)])
-        self.assertEqual(state.roads[player], [[(2.5, 2)], []])
+        self.assertEqual(state.roads[player], [[(2, 1.5)], []])
         player = 1
-        state.move(player=player, move=[(3, 2), (3, 2.5)])
+        state.move(player=player, move=[(3, 2), (3.5, 2)])
         self.assertEqual(state.nodes[player], [(3, 2)])
-        self.assertEqual(state.roads[player], [[(3, 2.5)], []])
+        self.assertEqual(state.roads[player], [[(3.5, 2)], []])
         player = 0
-        state.move(player=player, move=[(3, 3), (2.5, 3)])
+        state.move(player=player, move=[(3, 3), (3, 3.5)])
         self.assertEqual(state.nodes[player], [(2, 2), (3, 3)])
-        self.assertEqual(state.roads[player], [[(2.5, 2)], [(2.5, 3)]])
+        self.assertEqual(state.roads[player], [[(2.5, 2)], [(3, 3.5)]])
         player = 1
-        state.move(player=player, move=[(2, 3), (2, 2.5)])
+        state.move(player=player, move=[(2, 3), (1.5, 3)])
         self.assertEqual(state.nodes[player], [(2, 3), (3, 2)])
-        self.assertEqual(state.roads[player], [[(3, 2.5)], [(2, 2.5)]])
+        self.assertEqual(state.roads[player], [[(3, 2.5)], [(1.5, 3)]])
 
     def test_invalid_moves(self):
         state = game_state.GameState()
-        player = 0
-        state.move(player=player, move=[(2, 2), (2.5, 2)])
-        player = 1
-        state.move(player=player, move=[(3, 2), (3, 2.5)])
-        player = 0
-        state.move(player=player, move=[(3, 3), (2.5, 3)])
-        player = 1
-        state.move(player=player, move=[(2, 3), (2, 2.5)])
+        state.move(player=0, move=[(2, 2), (2, 1.5)])
+        state.move(player=1, move=[(3, 2), (3.5, 2)])
+        state.move(player=0, move=[(3, 3), (3, 3.5)])
+        state.move(player=1, move=[(2, 3), (1.5, 3)])
+        # Invalid inputs
         with self.assertRaises(Exception):
-            # Invalid inputs
-            state.move(player=1, move=[(), (0, 2.5)])
-            state.move(player=2, move=[(1,), ()])
-            state.move(player=1, move=[(1, 1), ()])
-            state.move(player=2, move=[(1, 1), (3,)])
-            state.move(player=1, move=[(1, 1), (1, 2, 3)])
-            # Moves that are already on the board
-            state.move(player=1, move=[(0, 2), (1, 2.5)])
-            state.move(player=2, move=[(0, 2), (1, 2.5)])
-            state.move(player=1, move=[(1, 2), (0, 2.5)])
-            state.move(player=2, move=[(1, 2), (0, 2.5)])
-            # Moves that are not connected to the network
-            state.move(player=1, move=[(4, 4), (3.5, 4)])
-            state.move(player=2, move=[(4, 4), (4, 3.5)])
-            state.move(player=1, move=[(3, 1), (2.5, 1)])
-            state.move(player=2, move=[(3, 1), (3.5, 1)])
+            state.move(player=0, move=[(), (0, 2.5)])
+        with self.assertRaises(Exception):
+            state.move(player=1, move=[(1,), ()])
+        with self.assertRaises(Exception):
+            state.move(player=0, move=[(1, 1), ()])
+        with self.assertRaises(Exception):
+            state.move(player=1, move=[(1, 1), (3,)])
+        with self.assertRaises(Exception):
+            state.move(player=0, move=[(1, 1), (1, 2, 3)])
+        # Moves that are already on the board
+        with self.assertRaises(Exception):
+            state.move(player=0, move=[(2, 2), (2.5, 2)])
+        with self.assertRaises(Exception):
+            state.move(player=1, move=[(3, 2), (3, 2.5)])
+        with self.assertRaises(Exception):
+            state.move(player=0, move=[(2, 1), (2, 1.5)])
+        with self.assertRaises(Exception):
+            state.move(player=1, move=[(3, 4), (3, 3.5)])
+        # Moves that are not connected to the correct network
+        with self.assertRaises(Exception):
+            state.move(player=0, move=[(4, 4), (4, 3.5)])
+        with self.assertRaises(Exception):
+            state.move(player=1, move=[(4, 4), (4, 3.5)])
+        with self.assertRaises(Exception):
+            state.move(player=0, move=[(3, 1), (2.5, 1)])
+        with self.assertRaises(Exception):
+            state.move(player=1, move=[(3, 1), (3, 1.5)])
 
     def test_score(self):
         state = game_state.GameState()
