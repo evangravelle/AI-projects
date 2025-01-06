@@ -9,20 +9,22 @@ ROAD_LEN = int(0.58 * SQUARE_LEN)  # pixels
 ROAD_WIDTH = int(0.1 * SQUARE_LEN)  # pixels
 
 SQUARE_FILENAME = {
-    "blank": "grey.png",
-    "Y1": "yellow1.png",
-    "Y2": "yellow2.png",
-    "Y3": "yellow3.png",
-    "G1": "green1.png",
-    "G2": "green2.png",
-    "G3": "green3.png",
-    "R1": "red1.png",
-    "R2": "red2.png",
-    "R3": "red3.png",
-    "B1": "blue1.png",
-    "B2": "blue2.png",
-    "B3": "blue3.png",
+    "_": "grey.png",
+    "y1": "yellow1.png",
+    "y2": "yellow2.png",
+    "y3": "yellow3.png",
+    "g1": "green1.png",
+    "g2": "green2.png",
+    "g3": "green3.png",
+    "r1": "red1.png",
+    "r2": "red2.png",
+    "r3": "red3.png",
+    "b1": "blue1.png",
+    "b2": "blue2.png",
+    "b3": "blue3.png",
 }
+
+COLOR = ["orange", "purple"]
 
 
 def coord_to_pix(coordinates):
@@ -50,11 +52,16 @@ def create_window(button_str="Create Board"):
                 key="-GRAPH-",
             )
         ],
-        [sg.Button(button_str, key="-BUTTON-")],
+        [
+            sg.Button(button_text=button_str, key="-BUTTON-"),
+            sg.Push(),
+            sg.Text(text=f"P1: Y={0}, G={0}, R={0}, B={0}", key="-P1-RESOURCES-"),
+            sg.Push(),
+            sg.Text(text=f"P2: Y={0}, G={0}, R={0}, B={0}", key="-P2-RESOURCES-"),
+        ],
     ]
 
     window = sg.Window(title="Node", layout=layout)
-
     return window
 
 
@@ -66,29 +73,19 @@ def draw_board(window, rng_seed=0):
     for sq_key, sq_val in state.board.items():
         pix = coord_to_pix(sq_key)
         x = pix[0]
-        y = SQUARE_LEN + pix[1]
+        y = pix[1]
         filepath = asset_dir + SQUARE_FILENAME[sq_val]
 
         # location of top left corner of image
         graph.draw_image(filename=filepath, location=(x, y))
 
-        # sg.Graph.draw_circle()
-        # draw_node(graph=graph, coord=(2, 2), color="orange")
-
-        # sg.Graph.draw_rectangle()
-        # draw_road(graph=graph, coord=(2, 1.5), color="orange")
-
-    # Create buttons
-    # draw_node(graph, coord=(2, 2), color="orange")
-
     return state
+
 
 def draw_node(graph, coord, color):
     pix = coord_to_pix(coord)
     line_width = 4
-    node_id = graph.draw_circle(
-        pix, radius=NODE_RADIUS, fill_color=color, line_width=line_width
-    )
+    node_id = graph.draw_circle(pix, radius=NODE_RADIUS, fill_color=color, line_width=line_width)
     return node_id
 
 
@@ -120,24 +117,42 @@ def draw_road(graph, coord, color):
     return road_id
 
 
-def is_inside_circle(pix, center, radius):
-    return (pix[0] - center[0]) ** 2 + (pix[1] - center[1]) ** 2 <= radius**2
+def draw_resources(window, state):
+    p1_text = (
+        f"P1: Y={state.resources[0]["y"]}, G={state.resources[0]["g"]}, "
+        f"R={state.resources[0]["r"]}, B={state.resources[0]["b"]}"
+    )
+    window["-P1-RESOURCES-"].update(p1_text)
+    p2_text = (
+        f"P2: Y={state.resources[1]["y"]}, G={state.resources[1]["g"]}, "
+        f"R={state.resources[1]["r"]}, B={state.resources[1]["b"]}"
+    )
+    window["-P2-RESOURCES-"].update(p2_text)
 
 
-def handle_graph_event(graph, pix):
-    node_coord = (2, 2)
-    if is_inside_circle(pix, coord_to_pix(node_coord), radius=NODE_RADIUS):
-        draw_node(graph, node_coord, color="orange")
-        return node_coord
+# def is_inside_circle(pix, center, radius):
+#     return (pix[0] - center[0]) ** 2 + (pix[1] - center[1]) ** 2 <= radius**2
 
-    return None
+
+def handle_graph_event(graph, pix, player):
+    # Round to the nearest half coordinate
+    coord_float = pix_to_coord(pix)
+    coord = (round(coord_float[0] * 2) / 2.0, round(coord_float[1] * 2) / 2.0)
+    print(coord)
+    if coord in game_state.PLAYABLE_ROADS_DICT.keys():
+        draw_road(graph, coord, color=COLOR[player])
+        return coord
+    elif 0 <= coord[0] <= 5 and 0 <= coord[1] <= 5 and coord not in game_state.UNPLAYABLE_NODES:
+        draw_node(graph, coord, color=COLOR[player])
+        return coord
+    else:
+        print(f"Unexpected graph event, pix={pix}, ignoring.")
+        return None
 
 
 def event_loop(window):
     state = None
-    player = 1
-    new_roads = []
-    new_nodes = []
+    new_pieces = set()
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == "Exit":
@@ -146,22 +161,20 @@ def event_loop(window):
         elif event == "-BUTTON-":
             if window["-BUTTON-"].ButtonText == "Create Board":
                 import time
+
                 ms = int(time.time() * 1000.0)
                 state = draw_board(window, rng_seed=ms)
-                window["-BUTTON-"].move(text="Finish Move")
+                window["-BUTTON-"].update(text="Finish Move")
 
             elif window["-BUTTON-"].ButtonText == "Finish Move":
-                state.nodes[player] += new_nodes
-                state.roads[player] += new_roads
+                state.move(new_pieces)
+                draw_resources(window, state)
+                new_pieces.clear()
 
         elif event == "-GRAPH-":
-            # print(f"GRAPH EVENT, VALUE = {values["-GRAPH-"]}")
-            new_piece = handle_graph_event(window["-GRAPH-"], values["-GRAPH-"])
+            new_piece = handle_graph_event(window["-GRAPH-"], values["-GRAPH-"], state.player)
             if new_piece is not None:
-                if game_state.piece_is_node(new_piece):
-                    new_nodes.append(new_piece)
-                else:
-                    new_roads.append(new_piece)
+                new_pieces.add(new_piece)
 
     window.close()
 
@@ -172,5 +185,5 @@ def main():
 
 
 if __name__ == "__main__":
-    sg.main_sdk_help()
+    # sg.main_sdk_help()
     main()
