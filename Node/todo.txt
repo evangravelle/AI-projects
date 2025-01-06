@@ -2,6 +2,7 @@
   - Clicking a button should toggle showing the correct piece in the correct color
     - Do nothing if the resources aren't available
 - Update players' resources after p2 goes
+- Use set instead of list for nodes and roads? Might be faster, and is cleaner?
 - Add some specific game state unit tests, using the screenshots Caitlin sent
   - Use these states later to make sure AI can find the right move
 - GameState needs findValidMoves() function
