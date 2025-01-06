@@ -57,32 +57,31 @@ PLAYABLE_ROADS_DICT = {
 
 UNPLAYABLE_NODES = {(0, 0), (1, 0), (4, 0), (5, 0), (0, 1), (5, 1), (0, 4), (5, 4), (0, 5), (1, 5), (4, 5), (5, 5)}
 
-# TODO: FINISH THIS
-NEIGHBORING_TILES_DICT = {
-    (2, 0): [(2, 1)],
-    (3, 0): [(2, 1)],
-    (1, 1): [],
-    (2, 1): [],
-    (3, 1): [],
-    (4, 1): [],
-    (0, 2): [],
-    (1, 2): [],
-    (2, 2): [],
-    (3, 2): [],
-    (4, 2): [],
-    (5, 2): [],
-    (0, 3): [],
-    (1, 3): [],
-    (2, 3): [],
-    (3, 3): [],
-    (4, 3): [],
-    (5, 3): [],
-    (1, 4): [],
-    (2, 4): [],
-    (3, 4): [],
-    (4, 4): [],
-    (2, 5): [],
-    (3, 5): [],
+ADJ_TILES_DICT = {
+    (2, 0): {(2, 1)},
+    (3, 0): {(2, 1)},
+    (1, 1): {(1, 2)},
+    (2, 1): {(1, 2), (2, 1), (2, 2)},
+    (3, 1): {(2, 1), (2, 2), (3, 2)},
+    (4, 1): {(3, 2)},
+    (0, 2): {(0, 3)},
+    (1, 2): {(0, 3), (1, 2), (1, 3)},
+    (2, 2): {(1, 2), (1, 3), (2, 2), (2, 3)},
+    (3, 2): {(2, 2), (2, 3), (3, 2), (3, 3)},
+    (4, 2): {(3, 2), (3, 3), (4, 3)},
+    (5, 2): {(4, 3)},
+    (0, 3): {(0, 3)},
+    (1, 3): {(0, 3), (1, 3), (1, 4)},
+    (2, 3): {(1, 3), (1, 4), (2, 3), (2, 4)},
+    (3, 3): {(2, 3), (2, 4), (3, 3), (3, 4)},
+    (4, 3): {(3, 3), (3, 4), (4, 3)},
+    (5, 3): {(4, 3)},
+    (1, 4): {(1, 4)},
+    (2, 4): {(1, 4), (2, 4), (2, 5)},
+    (3, 4): {(2, 4), (2, 5), (3, 4)},
+    (4, 4): {(3, 4)},
+    (2, 5): {(2, 5)},
+    (3, 5): {(2, 5)},
 }
 
 
@@ -215,6 +214,8 @@ class GameState:
                 return False
 
             # Roads and nodes must be connected to one of the correct player's road networks.
+            # TODO: If adding more than 1 road, need to verify that one of the roads is connected to the network, then
+            #       the 2nd is connected to the new network
             curr_roads = self.roads[self.player][0] | self.roads[self.player][1]
             playable_nodes = get_playable_nodes(curr_roads)
             playable_roads = get_playable_roads(curr_roads)
@@ -225,8 +226,8 @@ class GameState:
                         print(f"Move invalid because piece {piece} not in playable nodes {playable_nodes}")
                         return False
                 else:
-                    if piece not in playable_roads[piece]:
-                        print(f"Move invalid because piece {piece} not in playable roads {playable_nodes}")
+                    if piece not in playable_roads:
+                        print(f"Move invalid because piece {piece} not in playable roads {playable_roads}")
                         return False
 
         # Node and road locations must be unoccupied.
@@ -241,6 +242,7 @@ class GameState:
         return True
 
     def spend_resources(self, move):
+        print("SPENDING RESOURCES")
         for piece in move:
             if piece_is_node(piece):
                 self.resources[self.player]["y"] -= 2
@@ -250,11 +252,11 @@ class GameState:
                 self.resources[self.player]["b"] -= 1
 
     def gain_resources(self):
-        for player in range(0,2):
+        for player in range(0, 2):
             # First find tiles
             tiles = []
             for node in self.nodes[player]:
-                tiles += NEIGHBORING_TILES_DICT[node]
+                tiles += ADJ_TILES_DICT[node]
 
             # Now figure out what resources to get
             # TODO: CHECK THE STATE OF TILES (overloaded, nuked, or surrounded)
@@ -264,6 +266,7 @@ class GameState:
                 self.resources[player][ch] = resources_str.count(ch)
 
     def update_game_state(self, move):
+        # Update roads and nodes
         for piece in move:
             if piece_is_node(piece):
                 self.nodes[self.player].add(piece)

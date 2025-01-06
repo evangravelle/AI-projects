@@ -41,7 +41,7 @@ def pix_to_coord(pix):
     )
 
 
-def create_window(button_str="Create Board"):
+def create_window(button_str="Finish Move"):
     layout = [
         [
             sg.Graph(
@@ -61,7 +61,7 @@ def create_window(button_str="Create Board"):
         ],
     ]
 
-    window = sg.Window(title="Node", layout=layout)
+    window = sg.Window(title="Node", layout=layout, finalize=True)
     return window
 
 
@@ -134,47 +134,55 @@ def draw_resources(window, state):
 #     return (pix[0] - center[0]) ** 2 + (pix[1] - center[1]) ** 2 <= radius**2
 
 
-def handle_graph_event(graph, pix, player):
+def handle_graph_event(graph, pix, new_pieces, player):
     # Round to the nearest half coordinate
     coord_float = pix_to_coord(pix)
     coord = (round(coord_float[0] * 2) / 2.0, round(coord_float[1] * 2) / 2.0)
-    print(coord)
-    if coord in game_state.PLAYABLE_ROADS_DICT.keys():
-        draw_road(graph, coord, color=COLOR[player])
-        return coord
-    elif 0 <= coord[0] <= 5 and 0 <= coord[1] <= 5 and coord not in game_state.UNPLAYABLE_NODES:
-        draw_node(graph, coord, color=COLOR[player])
-        return coord
+
+    if coord in new_pieces.keys():
+        graph.delete_figure(new_pieces[coord])
+        new_pieces.pop(coord)
     else:
-        print(f"Unexpected graph event, pix={pix}, ignoring.")
-        return None
+        if coord in game_state.PLAYABLE_ROADS_DICT.keys():
+            road_id = draw_road(graph, coord, color=COLOR[player])
+            new_pieces[coord] = road_id
+            return coord, road_id
+        elif (
+            0 <= coord[0] <= 5
+            and 0 <= coord[1] <= 5
+            and coord[0] == int(coord[0])
+            and coord[1] == int(coord[1])
+            and coord not in game_state.UNPLAYABLE_NODES
+        ):
+            node_id = draw_node(graph, coord, color=COLOR[player])
+            new_pieces[coord] = node_id
+            return coord, node_id
+        else:
+            print(f"Unexpected graph event, pix={pix}, ignoring.")
+            return None, None
 
 
 def event_loop(window):
-    state = None
-    new_pieces = set()
+
+    import time
+
+    ms = int(time.time() * 1000.0)
+    state = draw_board(window, rng_seed=ms)
+    graph = window["-GRAPH-"]
+
+    new_pieces = {}
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == "Exit":
             break
 
-        elif event == "-BUTTON-":
-            if window["-BUTTON-"].ButtonText == "Create Board":
-                import time
-
-                ms = int(time.time() * 1000.0)
-                state = draw_board(window, rng_seed=ms)
-                window["-BUTTON-"].update(text="Finish Move")
-
-            elif window["-BUTTON-"].ButtonText == "Finish Move":
-                state.move(new_pieces)
-                draw_resources(window, state)
-                new_pieces.clear()
+        if event == "-BUTTON-":
+            state.move(set(new_pieces.keys()))
+            draw_resources(window, state)
+            new_pieces = {}
 
         elif event == "-GRAPH-":
-            new_piece = handle_graph_event(window["-GRAPH-"], values["-GRAPH-"], state.player)
-            if new_piece is not None:
-                new_pieces.add(new_piece)
+            handle_graph_event(graph, values["-GRAPH-"], new_pieces, state.player)
 
     window.close()
 

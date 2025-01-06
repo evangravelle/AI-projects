@@ -35,8 +35,35 @@ def draw_roads_event_loop(window, button_str):
             except StopIteration:
                 break
 
-
     window.close()
+
+
+def draw_neighboring_tiles_event_loop(window, button_str):
+    graph = None
+    mode = "INIT"
+    tile_ids = []
+    tile_keys = game_state.ADJ_TILES_DICT.keys()
+    tile_keys_it = iter(tile_keys)
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == "Exit":
+            break
+
+        if mode == "INIT":
+            gui.draw_board(window)
+            graph = window["-GRAPH-"]
+            button = window["-BUTTON-"]
+            button.update(text=button_str)
+            mode = "DRAW"
+        elif mode == "DRAW" and event == "-BUTTON-":
+            try:
+                tile_key = next(tile_keys_it)
+                adj_tiles = game_state.ADJ_TILES_DICT[tile_key]
+                clear_roads(graph, tile_ids)
+                tile_ids = [gui.draw_node(graph, tile_key, "white")]
+                tile_ids = draw_nodes(graph, adj_tiles, tile_ids)
+            except StopIteration:
+                break
 
 
 def clear_roads(graph, road_ids):
@@ -49,6 +76,13 @@ def draw_roads(graph, roads, road_ids):
         road_id = gui.draw_road(graph, road, "orange")
         road_ids.append(road_id)
     return road_ids
+
+
+def draw_nodes(graph, nodes, node_ids):
+    for node in nodes:
+        node_id = gui.draw_node(graph, (node[0] + 0.5, node[1] - 0.5), "orange")
+        node_ids.append(node_id)
+    return node_ids
 
 
 class TestGameState(unittest.TestCase):
@@ -147,6 +181,12 @@ class TestGameState(unittest.TestCase):
             button_str = "Draw Adjacent Roads"
             window = gui.create_window()
             draw_roads_event_loop(window, button_str)
+
+    def test_get_neighboring_tiles(self):
+        if GUI_ENABLED:
+            button_str = "Draw Neighboring Tiles"
+            window = gui.create_window()
+            draw_neighboring_tiles_event_loop(window, button_str)
 
     def test_get_playable_nodes(self):
         roads = set()
