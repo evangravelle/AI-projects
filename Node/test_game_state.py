@@ -7,82 +7,133 @@ import unittest
 GUI_ENABLED = False
 
 
-def draw_roads_event_loop(window, button_str):
-    graph = None
-    mode = "INIT"
+def draw_road_adj_roads_event_loop(window):
+    gui.draw_board(window)
+    graph = window["-GRAPH-"]
+
     road_ids = []
     road_keys = game_state.PLAYABLE_ROADS_DICT.keys()
     road_keys_it = iter(road_keys)
     while True:
-        # sg.window.Window.read()
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == "Exit":
             break
 
-        if mode == "INIT":
-            gui.draw_board(window)
-            graph = window["-GRAPH-"]
-            button = window["-BUTTON-"]
-            button.update(text=button_str)
-            mode = "DRAW"
-        elif mode == "DRAW" and event == "-BUTTON-":
+        elif event == "-BUTTON-":
             try:
                 road_key = next(road_keys_it)
                 adj_roads = game_state.PLAYABLE_ROADS_DICT[road_key]
-                clear_roads(graph, road_ids)
-                road_ids = [gui.draw_road(graph, road_key, "white")]
-                road_ids = draw_roads(graph, adj_roads, road_ids)
+                clear_pieces(graph, road_ids)
+                road_ids = []
+                road_ids = draw_roads(graph, {road_key}, road_ids, "white")
+                road_ids = draw_roads(graph, adj_roads, road_ids, "orange")
             except StopIteration:
                 break
 
     window.close()
 
 
-def draw_neighboring_tiles_event_loop(window, button_str):
-    graph = None
-    mode = "INIT"
-    tile_ids = []
-    tile_keys = game_state.ADJ_TILES_DICT.keys()
+def draw_tile_adj_nodes_event_loop(window):
+    gui.draw_board(window)
+    graph = window["-GRAPH-"]
+
+    piece_ids = []
+    tile_keys = game_state.TILE_TO_ADJ_NODES_DICT.keys()
     tile_keys_it = iter(tile_keys)
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == "Exit":
             break
 
-        if mode == "INIT":
-            gui.draw_board(window)
-            graph = window["-GRAPH-"]
-            button = window["-BUTTON-"]
-            button.update(text=button_str)
-            mode = "DRAW"
-        elif mode == "DRAW" and event == "-BUTTON-":
+        elif event == "-BUTTON-":
             try:
                 tile_key = next(tile_keys_it)
-                adj_tiles = game_state.ADJ_TILES_DICT[tile_key]
-                clear_roads(graph, tile_ids)
-                tile_ids = [gui.draw_node(graph, tile_key, "white")]
-                tile_ids = draw_nodes(graph, adj_tiles, tile_ids)
+                adj_nodes = game_state.TILE_TO_ADJ_NODES_DICT[tile_key]
+                clear_pieces(graph, piece_ids)
+                piece_ids = []
+                piece_ids = draw_tiles(graph, {tile_key}, piece_ids, "white")
+                piece_ids = draw_nodes(graph, adj_nodes, piece_ids, "orange")
             except StopIteration:
                 break
 
-
-def clear_roads(graph, road_ids):
-    for road_id in road_ids:
-        graph.delete_figure(road_id)
+    window.close()
 
 
-def draw_roads(graph, roads, road_ids):
+def draw_node_adj_tiles_event_loop(window):
+    gui.draw_board(window)
+    graph = window["-GRAPH-"]
+
+    piece_ids = []
+    node_keys = game_state.NODE_TO_ADJ_TILES_DICT.keys()
+    node_keys_it = iter(node_keys)
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == "Exit":
+            break
+
+        elif event == "-BUTTON-":
+            try:
+                node_key = next(node_keys_it)
+                adj_tiles = game_state.NODE_TO_ADJ_TILES_DICT[node_key]
+                clear_pieces(graph, piece_ids)
+                piece_ids = []
+                piece_ids = draw_nodes(graph, {node_key}, piece_ids, "white")
+                piece_ids = draw_tiles(graph, adj_tiles, piece_ids, "orange")
+            except StopIteration:
+                break
+
+    window.close()
+
+
+def draw_road_adj_tiles_event_loop(window):
+    gui.draw_board(window)
+    graph = window["-GRAPH-"]
+    piece_ids = []
+    road_keys = game_state.ROAD_TO_ADJ_TILES_DICT.keys()
+    road_keys_it = iter(road_keys)
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == "Exit":
+            break
+
+        elif event == "-BUTTON-":
+            try:
+                road_key = next(road_keys_it)
+                adj_tiles = game_state.ROAD_TO_ADJ_TILES_DICT[road_key]
+                clear_pieces(graph, piece_ids)
+                piece_ids = []
+                piece_ids = draw_roads(graph, {road_key}, piece_ids, "white")
+                piece_ids = draw_tiles(graph, adj_tiles, piece_ids, "orange")
+            except StopIteration:
+                break
+
+    window.close()
+
+
+def clear_pieces(graph, piece_ids):
+    for piece_id in piece_ids:
+        graph.delete_figure(piece_id)
+
+
+def draw_roads(graph, roads, road_ids, color):
     for road in roads:
-        road_id = gui.draw_road(graph, road, "orange")
+        road_id = gui.draw_road(graph, road, color)
         road_ids.append(road_id)
     return road_ids
 
 
-def draw_nodes(graph, nodes, node_ids):
+def draw_nodes(graph, nodes, node_ids, color):
     for node in nodes:
-        node_id = gui.draw_node(graph, (node[0] + 0.5, node[1] - 0.5), "orange")
+        node_id = gui.draw_node(graph, node, color)
         node_ids.append(node_id)
     return node_ids
+
+
+def draw_tiles(graph, tiles, tile_ids, color):
+    for tile in tiles:
+        tile_id = gui.draw_node(graph, (tile[0] + 0.5, tile[1] - 0.5), color)
+        tile_ids.append(tile_id)
+    return tile_ids
 
 
 class TestGameState(unittest.TestCase):
@@ -173,20 +224,28 @@ class TestGameState(unittest.TestCase):
 
     def test_score(self):
         state = game_state.GameState()
-        score = state.get_score()
-        self.assertEqual(score, (0, 0))
+        score = state.score
+        self.assertEqual(score, [0, 0])
 
-    def test_get_playable_roads(self):
+    def test_draw_road_adjacent_roads(self):
         if GUI_ENABLED:
-            button_str = "Draw Adjacent Roads"
-            window = gui.create_window()
-            draw_roads_event_loop(window, button_str)
+            window = gui.create_window("Draw Road's Adjacent Roads")
+            draw_road_adj_roads_event_loop(window)
 
-    def test_get_neighboring_tiles(self):
+    def test_draw_tile_adjacent_nodes(self):
         if GUI_ENABLED:
-            button_str = "Draw Neighboring Tiles"
-            window = gui.create_window()
-            draw_neighboring_tiles_event_loop(window, button_str)
+            window = gui.create_window("Draw Tile's Adjacent Nodes")
+            draw_tile_adj_nodes_event_loop(window)
+
+    def test_draw_node_adjacent_tiles(self):
+        if GUI_ENABLED:
+            window = gui.create_window("Draw Node's Adjacent Tiles")
+            draw_node_adj_tiles_event_loop(window)
+
+    def test_draw_road_adjacent_tiles(self):
+        if GUI_ENABLED:
+            window = gui.create_window("Draw Road's Adjacent Tiles")
+            draw_road_adj_tiles_event_loop(window)
 
     def test_get_playable_nodes(self):
         roads = set()

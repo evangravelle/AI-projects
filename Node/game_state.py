@@ -14,6 +14,23 @@ Board state uses the same grid, the top left vertice is what identifies a tile.
 import math
 import random
 
+# Upper left location of each tile
+# TILES = [
+#     (2, 1),
+#     (1, 2),
+#     (2, 2),
+#     (3, 2),
+#     (0, 3),
+#     (1, 3),
+#     (2, 3),
+#     (3, 3),
+#     (4, 3),
+#     (1, 4),
+#     (2, 4),
+#     (3, 4),
+#     (2, 5),
+# ]
+
 PLAYABLE_ROADS_DICT = {
     # horizontal
     (2.5, 0): {(2, 0.5), (3, 0.5)},
@@ -57,7 +74,7 @@ PLAYABLE_ROADS_DICT = {
 
 UNPLAYABLE_NODES = {(0, 0), (1, 0), (4, 0), (5, 0), (0, 1), (5, 1), (0, 4), (5, 4), (0, 5), (1, 5), (4, 5), (5, 5)}
 
-ADJ_TILES_DICT = {
+NODE_TO_ADJ_TILES_DICT = {
     (2, 0): {(2, 1)},
     (3, 0): {(2, 1)},
     (1, 1): {(1, 2)},
@@ -84,6 +101,63 @@ ADJ_TILES_DICT = {
     (3, 5): {(2, 5)},
 }
 
+ROAD_TO_ADJ_TILES_DICT = {
+    # horizontal
+    (2.5, 0): {(2, 1)},
+    (1.5, 1): {(1, 2)},
+    (2.5, 1): {(2, 1), (2, 2)},
+    (3.5, 1): {(3, 2)},
+    (0.5, 2): {(0, 3)},
+    (1.5, 2): {(1, 2), (1, 3)},
+    (2.5, 2): {(2, 2), (2, 3)},
+    (3.5, 2): {(3, 2), (3, 3)},
+    (4.5, 2): {(4, 3)},
+    (0.5, 3): {(0, 3)},
+    (1.5, 3): {(1, 3), (1, 4)},
+    (2.5, 3): {(2, 3), (2, 4)},
+    (3.5, 3): {(3, 3), (3, 4)},
+    (4.5, 3): {(4, 3)},
+    (1.5, 4): {(1, 4)},
+    (2.5, 4): {(2, 4), (2, 5)},
+    (3.5, 4): {(3, 4)},
+    (2.5, 5): {(2, 5)},
+    # vertical
+    (2, 0.5): {(2, 1)},
+    (3, 0.5): {(2, 1)},
+    (1, 1.5): {(1, 2)},
+    (2, 1.5): {(1, 2), (2, 2)},
+    (3, 1.5): {(2, 2), (3, 2)},
+    (4, 1.5): {(3, 2)},
+    (0, 2.5): {(0, 3)},
+    (1, 2.5): {(0, 3), (1, 3)},
+    (2, 2.5): {(1, 3), (2, 3)},
+    (3, 2.5): {(2, 3), (3, 3)},
+    (4, 2.5): {(3, 3), (4, 3)},
+    (5, 2.5): {(4, 3)},
+    (1, 3.5): {(1, 4)},
+    (2, 3.5): {(1, 4), (2, 4)},
+    (3, 3.5): {(2, 4), (3, 4)},
+    (4, 3.5): {(3, 4)},
+    (2, 4.5): {(2, 5)},
+    (3, 4.5): {(2, 5)},
+}
+
+TILE_TO_ADJ_NODES_DICT = {
+    (2, 1): {(2, 0), (2, 1), (3, 0), (3, 1)},
+    (1, 2): {(1, 1), (1, 2), (2, 1), (2, 2)},
+    (2, 2): {(2, 1), (2, 2), (3, 1), (3, 2)},
+    (3, 2): {(3, 1), (3, 2), (4, 1), (4, 2)},
+    (0, 3): {(0, 2), (0, 3), (1, 2), (1, 3)},
+    (1, 3): {(1, 2), (1, 3), (2, 2), (2, 3)},
+    (2, 3): {(2, 2), (2, 3), (3, 2), (3, 3)},
+    (3, 3): {(3, 2), (3, 3), (4, 2), (4, 3)},
+    (4, 3): {(4, 2), (4, 3), (5, 2), (5, 3)},
+    (1, 4): {(1, 3), (1, 4), (2, 3), (2, 4)},
+    (2, 4): {(2, 3), (2, 4), (3, 3), (3, 4)},
+    (3, 4): {(3, 3), (3, 4), (4, 3), (4, 4)},
+    (2, 5): {(2, 4), (2, 5), (3, 4), (3, 5)},
+}
+
 
 def get_playable_roads(roads):
     # There should be 36 keys. Roads are defined left->right or down->up, and sorted lexically x -> y
@@ -107,8 +181,8 @@ def piece_is_node(piece):
 
 
 def create_random_board(rng_seed):
-    tiles = [
-        "_",
+    tile_strs = [
+        "_4",
         "y1",
         "y2",
         "y3",
@@ -122,25 +196,9 @@ def create_random_board(rng_seed):
         "b2",
         "b3",
     ]
-    # Upper left location of each tile
-    coords = [
-        (2, 1),
-        (1, 2),
-        (2, 2),
-        (3, 2),
-        (0, 3),
-        (1, 3),
-        (2, 3),
-        (3, 3),
-        (4, 3),
-        (1, 4),
-        (2, 4),
-        (3, 4),
-        (2, 5),
-    ]
     random.seed(rng_seed)
-    random.shuffle(tiles)
-    board = dict(zip(coords, tiles))
+    random.shuffle(tile_strs)
+    board = dict(zip(TILE_TO_ADJ_NODES_DICT.keys(), tile_strs))
     return board
 
 
@@ -159,6 +217,9 @@ class GameState:
             {"y": 0, "g": 0, "r": 0, "b": 0},
             {"y": 0, "g": 0, "r": 0, "b": 0},
         ]
+        self.tile_states = dict.fromkeys(TILE_TO_ADJ_NODES_DICT.keys())
+        self.tile_node_counts = {tile: 0 for tile in TILE_TO_ADJ_NODES_DICT.keys()}
+        self.score = [0, 0]
 
     def is_move_valid(self, move):
         # Inputs must be in the expected format
@@ -214,8 +275,10 @@ class GameState:
                 return False
 
             # Roads and nodes must be connected to one of the correct player's road networks.
+            # TODO: If adding a road and a node, need to verify that the road is connected to the network, then
+            #       the node is connected to the new bigger network
             # TODO: If adding more than 1 road, need to verify that one of the roads is connected to the network, then
-            #       the 2nd is connected to the new network
+            #       the 2nd is connected to the new bigger network
             curr_roads = self.roads[self.player][0] | self.roads[self.player][1]
             playable_nodes = get_playable_nodes(curr_roads)
             playable_roads = get_playable_roads(curr_roads)
@@ -241,32 +304,65 @@ class GameState:
         # If we made it this far, move is valid.
         return True
 
-    def spend_resources(self, move):
-        print("SPENDING RESOURCES")
+    def trade(self, res_to_trade, res_to_trade_for):
+        for res in res_to_trade:
+            self.resources[self.player][res] -= 1
+        self.resources[self.player][res_to_trade_for] += 1
+
+    def move(self, move):
+        """
+        Move contains a list of nodes/roads. A node is a pair of whole numbers,
+        a road is a pair with one number with 0.5.
+        """
+
+        # Check if move is valid given game state.
+        if not self.is_move_valid(move):
+            raise Exception("Move is not valid.")
+
+        # Spend resources for the move.
+        if self.turn >= 5:
+            self.spend_resources(move)
+
+        # Update roads and nodes.
+        self.update_roads_and_nodes(move)
+
+        # Update tile states.
+        self.update_tile_states(move)
+
+        # Update score.
+        if self.turn % 2 == 0:
+            self.update_score()
+
+        # If player 2 just moved, everyone gains resources.
+        if self.turn >= 4 and self.turn % 2 == 0:
+            self.gain_resources()
+
+        # Update player.
+        self.player = (self.player + 1) % 2
+
+        # Finish turn.
+        self.turn += 1
+
+    def update_tile_states(self, move):
         for piece in move:
             if piece_is_node(piece):
-                self.resources[self.player]["y"] -= 2
-                self.resources[self.player]["g"] -= 2
+                # Add new nodes to node counts
+                adj_tiles = NODE_TO_ADJ_TILES_DICT[piece]
+                for adj_tile in adj_tiles:
+                    self.tile_node_counts[adj_tile] += 1
+
+                    # Check if any adj tiles get nuked
+                    max_res = int(self.board[adj_tile][1])
+                    if self.tile_node_counts[adj_tile] > max_res:
+                        self.tile_states[adj_tile] = -1
             else:
-                self.resources[self.player]["r"] -= 1
-                self.resources[self.player]["b"] -= 1
+                # Check if any adj tiles get surrounded
+                adj_tiles = []
+                # TODO: IMPLEMENT THIS
+                # TODO: Extend this to work for boundaries larger than 1 tile
+                pass
 
-    def gain_resources(self):
-        for player in range(0, 2):
-            # First find tiles
-            tiles = []
-            for node in self.nodes[player]:
-                tiles += ADJ_TILES_DICT[node]
-
-            # Now figure out what resources to get
-            # TODO: CHECK THE STATE OF TILES (overloaded, nuked, or surrounded)
-            resources_str = "".join([self.board[tile][0] for tile in tiles])
-            print(resources_str)
-            for ch in "ygrb":
-                self.resources[player][ch] = resources_str.count(ch)
-
-    def update_game_state(self, move):
-        # Update roads and nodes
+    def update_roads_and_nodes(self, move):
         for piece in move:
             if piece_is_node(piece):
                 self.nodes[self.player].add(piece)
@@ -290,33 +386,7 @@ class GameState:
             self.roads[self.player][0] |= self.roads[self.player][1]
             self.roads[self.player][1] = set()
 
-        self.player = (self.player + 1) % 2
-
-    def move(self, move):
-        """
-        Move contains a list of nodes/roads. A node is a pair of whole numbers,
-        a road is a pair with one number with 0.5.
-        """
-
-        # Check if move is valid given game state.
-        if not self.is_move_valid(move):
-            raise Exception("Move is not valid.")
-
-        # Spend resources for the move.
-        if self.turn >= 5:
-            self.spend_resources(move)
-
-        # Update game state.
-        self.update_game_state(move)
-
-        # If player 2 just moved, everyone gains resources.
-        if self.turn >= 4 and self.turn % 2 == 0:
-            self.gain_resources()
-
-        # Clean up game state, finish turn.
-        self.turn += 1
-
-    def get_score(self):
+    def update_score(self):
         scores = (len(self.nodes[0]), len(self.nodes[1]))
 
         # Check the number of groups before computing the max group size
@@ -333,7 +403,40 @@ class GameState:
             scores[0] += 2
         elif max_group_sizes[0] > max_group_sizes[1]:
             scores[1] += 2
-        return scores
+
+        if scores[0] >= 10:
+            print("PLAYER 1 WINS!")
+            raise Exception("")
+        elif scores[1] >= 10:
+            print("PLAYER 2 WINS!")
+            raise Exception("")
+
+        self.score = scores
+
+    def spend_resources(self, move):
+        for piece in move:
+            if piece_is_node(piece):
+                self.resources[self.player]["y"] -= 2
+                self.resources[self.player]["g"] -= 2
+            else:
+                self.resources[self.player]["r"] -= 1
+                self.resources[self.player]["b"] -= 1
+
+    def gain_resources(self):
+        for player in range(0, 2):
+            # First find adjacent tiles that can give resources (not surrounded by other player or nuked)
+            tiles = []
+            for node in self.nodes[player]:
+                adj_tiles = NODE_TO_ADJ_TILES_DICT[node]
+                for adj_tile in adj_tiles:
+                    if self.tile_states[adj_tile] is None or self.tile_states[adj_tile] == player:
+                        tiles.append(adj_tile)
+
+            # Now figure out what resources to get
+            resources_str = "".join([self.board[tile][0] for tile in tiles])
+            # print(resources_str)
+            for ch in "ygrb":
+                self.resources[player][ch] += resources_str.count(ch)
 
     def get_available_moves(self):
         pass

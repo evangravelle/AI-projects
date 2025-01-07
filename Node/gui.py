@@ -1,15 +1,22 @@
 import FreeSimpleGUI as sg
 import game_state
 
+"""PARAMS TO SET"""
+
+RANDOMIZE_BOARD = False
+
+"""END PARAMS"""
+
 SQUARE_LEN = 128  # pixels
 WINDOW_SIDE_BUFFER = 128  # pixels
 GRAPH_LEN = 5 * SQUARE_LEN + 2 * WINDOW_SIDE_BUFFER  # pixels
 NODE_RADIUS = int(0.17 * SQUARE_LEN)  # pixels
+NODE_LINE_WIDTH = 4
 ROAD_LEN = int(0.58 * SQUARE_LEN)  # pixels
 ROAD_WIDTH = int(0.1 * SQUARE_LEN)  # pixels
 
 SQUARE_FILENAME = {
-    "_": "grey.png",
+    "_4": "grey.png",
     "y1": "yellow1.png",
     "y2": "yellow2.png",
     "y3": "yellow3.png",
@@ -65,11 +72,10 @@ def create_window(button_str="Finish Move"):
     return window
 
 
-def draw_board(window, rng_seed=0):
+def draw_board(graph, rng_seed=0):
     state = game_state.GameState(rng_seed=rng_seed)
 
     asset_dir = "C:\\Users\\evang\\Desktop\\git\\AI-projects\\Node\\assets\\"
-    graph = window["-GRAPH-"]
     for sq_key, sq_val in state.board.items():
         pix = coord_to_pix(sq_key)
         x = pix[0]
@@ -84,8 +90,7 @@ def draw_board(window, rng_seed=0):
 
 def draw_node(graph, coord, color):
     pix = coord_to_pix(coord)
-    line_width = 4
-    node_id = graph.draw_circle(pix, radius=NODE_RADIUS, fill_color=color, line_width=line_width)
+    node_id = graph.draw_circle(pix, radius=NODE_RADIUS, fill_color=color, line_width=NODE_LINE_WIDTH)
     return node_id
 
 
@@ -117,24 +122,32 @@ def draw_road(graph, coord, color):
     return road_id
 
 
-def draw_resources(window, state):
+def draw_nukes(graph, state):
+    # TODO: Don't keep drawing the nuke, can keep a set of nuke ids to verify
+    nuke_ids = []
+    for tile, tile_state in state.tile_states.items():
+        if tile_state == -1:
+            nuke_ids.append(draw_node(graph, (tile[0] + 0.5, tile[1] - 0.5), "black"))
+
+
+def draw_resources(resources, state):
     p1_text = (
         f"P1: Y={state.resources[0]["y"]}, G={state.resources[0]["g"]}, "
         f"R={state.resources[0]["r"]}, B={state.resources[0]["b"]}"
     )
-    window["-P1-RESOURCES-"].update(p1_text)
+    resources[0].update(p1_text)
     p2_text = (
         f"P2: Y={state.resources[1]["y"]}, G={state.resources[1]["g"]}, "
         f"R={state.resources[1]["r"]}, B={state.resources[1]["b"]}"
     )
-    window["-P2-RESOURCES-"].update(p2_text)
+    resources[1].update(p2_text)
 
 
 # def is_inside_circle(pix, center, radius):
 #     return (pix[0] - center[0]) ** 2 + (pix[1] - center[1]) ** 2 <= radius**2
 
 
-def handle_graph_event(graph, pix, new_pieces, player):
+def handle_graph_event(graph, pix, player, new_pieces, res_to_trade, res_to_trade_for):
     # Round to the nearest half coordinate
     coord_float = pix_to_coord(pix)
     coord = (round(coord_float[0] * 2) / 2.0, round(coord_float[1] * 2) / 2.0)
@@ -146,7 +159,6 @@ def handle_graph_event(graph, pix, new_pieces, player):
         if coord in game_state.PLAYABLE_ROADS_DICT.keys():
             road_id = draw_road(graph, coord, color=COLOR[player])
             new_pieces[coord] = road_id
-            return coord, road_id
         elif (
             0 <= coord[0] <= 5
             and 0 <= coord[1] <= 5
@@ -156,42 +168,53 @@ def handle_graph_event(graph, pix, new_pieces, player):
         ):
             node_id = draw_node(graph, coord, color=COLOR[player])
             new_pieces[coord] = node_id
-            return coord, node_id
+        elif False:
+            # TODO: TRADE LOGIC GOES HERE
+            pass
         else:
             print(f"Unexpected graph event, pix={pix}, ignoring.")
-            return None, None
 
 
-def event_loop(window):
-
-    import time
-
-    ms = int(time.time() * 1000.0)
-    state = draw_board(window, rng_seed=ms)
+def event_loop():
+    window = create_window()
     graph = window["-GRAPH-"]
+    button = window["-BUTTON-"]
+    resources = [window["-P1-RESOURCES-"], window["-P2-RESOURCES-"]]
+
+    if RANDOMIZE_BOARD:
+        import time
+
+        ms = int(time.time() * 1000.0)
+        seed = ms
+    else:
+        seed = 2
+    state = draw_board(graph, rng_seed=seed)
 
     new_pieces = {}
+    res_to_trade = []
+    res_to_trade_for = "_"
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == "Exit":
             break
 
-        if event == "-BUTTON-":
+        elif event == "-BUTTON-":
+            if res_to_trade:
+                state.trade(res_to_trade, res_to_trade_for)
             state.move(set(new_pieces.keys()))
-            draw_resources(window, state)
+            draw_nukes(graph, state)
+            draw_resources(resources, state)
+            res_to_trade = []
+            res_to_trade_for = "_"
             new_pieces = {}
 
         elif event == "-GRAPH-":
-            handle_graph_event(graph, values["-GRAPH-"], new_pieces, state.player)
+            # Note, this updates new_pieces, res_to_trade, and res_to_trade_for.
+            handle_graph_event(graph, values["-GRAPH-"], state.player, new_pieces, res_to_trade, res_to_trade_for)
 
     window.close()
 
 
-def main():
-    window = create_window()
-    event_loop(window)
-
-
 if __name__ == "__main__":
     # sg.main_sdk_help()
-    main()
+    event_loop()
