@@ -3,7 +3,11 @@ import game_state
 
 """PARAMS TO SET"""
 
-RANDOMIZE_BOARD = False
+# Options are "RANDOM", "DEFAULT"
+BOARD_LAYOUT = "DEFAULT"
+
+# Options are "CUSTOM", "DEFAULT"
+INITIAL_STATE = "CUSTOM"
 
 """END PARAMS"""
 
@@ -48,6 +52,10 @@ def pix_to_coord(pix):
     )
 
 
+def get_score_str(player, score, y, g, r, b):
+    return f"P{player+1}={score} pts, Y={y}, G={g}, " f"R={r}, B={b}"
+
+
 def create_window(button_str="Finish Move"):
     layout = [
         [
@@ -62,19 +70,16 @@ def create_window(button_str="Finish Move"):
         [
             sg.Button(button_text=button_str, key="-BUTTON-"),
             sg.Push(),
-            sg.Text(text=f"P1: Y={0}, G={0}, R={0}, B={0}", key="-P1-RESOURCES-"),
+            sg.Text(text=get_score_str(player=0, score=0, y=0, g=0, r=0, b=0), key="-P1-RESOURCES-"),
             sg.Push(),
-            sg.Text(text=f"P2: Y={0}, G={0}, R={0}, B={0}", key="-P2-RESOURCES-"),
+            sg.Text(text=get_score_str(player=1, score=0, y=0, g=0, r=0, b=0), key="-P2-RESOURCES-"),
         ],
     ]
 
-    window = sg.Window(title="Node", layout=layout, finalize=True)
-    return window
+    return sg.Window(title="Node", layout=layout, finalize=True)
 
 
-def draw_board(graph, rng_seed=0):
-    state = game_state.GameState(rng_seed=rng_seed)
-
+def draw_board(graph, state):
     asset_dir = "C:\\Users\\evang\\Desktop\\git\\AI-projects\\Node\\assets\\"
     for sq_key, sq_val in state.board.items():
         pix = coord_to_pix(sq_key)
@@ -84,8 +89,6 @@ def draw_board(graph, rng_seed=0):
 
         # location of top left corner of image
         graph.draw_image(filename=filepath, location=(x, y))
-
-    return state
 
 
 def draw_node(graph, coord, color):
@@ -131,20 +134,9 @@ def draw_nukes(graph, state):
 
 
 def draw_resources(resources, state):
-    p1_text = (
-        f"P1: Y={state.resources[0]["y"]}, G={state.resources[0]["g"]}, "
-        f"R={state.resources[0]["r"]}, B={state.resources[0]["b"]}"
-    )
-    resources[0].update(p1_text)
-    p2_text = (
-        f"P2: Y={state.resources[1]["y"]}, G={state.resources[1]["g"]}, "
-        f"R={state.resources[1]["r"]}, B={state.resources[1]["b"]}"
-    )
-    resources[1].update(p2_text)
-
-
-# def is_inside_circle(pix, center, radius):
-#     return (pix[0] - center[0]) ** 2 + (pix[1] - center[1]) ** 2 <= radius**2
+    for player in [0, 1]:
+        txt = get_score_str(player=player, score=state.score[player], y=state.resources[player]["y"], g=state.resources[player]["g"], r=state.resources[player]["r"], b=state.resources[player]["b"])
+        resources[player].update(txt)
 
 
 def handle_graph_event(graph, pix, player, new_pieces, res_to_trade, res_to_trade_for):
@@ -175,21 +167,7 @@ def handle_graph_event(graph, pix, player, new_pieces, res_to_trade, res_to_trad
             print(f"Unexpected graph event, pix={pix}, ignoring.")
 
 
-def event_loop():
-    window = create_window()
-    graph = window["-GRAPH-"]
-    button = window["-BUTTON-"]
-    resources = [window["-P1-RESOURCES-"], window["-P2-RESOURCES-"]]
-
-    if RANDOMIZE_BOARD:
-        import time
-
-        ms = int(time.time() * 1000.0)
-        seed = ms
-    else:
-        seed = 2
-    state = draw_board(graph, rng_seed=seed)
-
+def event_loop(state):
     new_pieces = {}
     res_to_trade = []
     res_to_trade_for = "_"
@@ -201,12 +179,14 @@ def event_loop():
         elif event == "-BUTTON-":
             if res_to_trade:
                 state.trade(res_to_trade, res_to_trade_for)
-            state.move(set(new_pieces.keys()))
-            draw_nukes(graph, state)
-            draw_resources(resources, state)
-            res_to_trade = []
-            res_to_trade_for = "_"
-            new_pieces = {}
+            if not state.move(set(new_pieces.keys())):
+                print("Invalid move, retry.")
+            else:
+                draw_nukes(graph, state)
+                draw_resources(resources, state)
+                res_to_trade = []
+                res_to_trade_for = "_"
+                new_pieces = {}
 
         elif event == "-GRAPH-":
             # Note, this updates new_pieces, res_to_trade, and res_to_trade_for.
@@ -217,4 +197,40 @@ def event_loop():
 
 if __name__ == "__main__":
     # sg.main_sdk_help()
-    event_loop()
+
+    window = create_window()
+    graph = window["-GRAPH-"]
+    button = window["-BUTTON-"]
+    resources = [window["-P1-RESOURCES-"], window["-P2-RESOURCES-"]]
+
+    if BOARD_LAYOUT == "RANDOM":
+        import time
+
+        ms = int(time.time() * 1000.0)
+        seed = ms
+    elif BOARD_LAYOUT == "DEFAULT":
+        seed = 2
+    else:
+        raise Exception(f"BOARD_LAYOUT = {BOARD_LAYOUT} is not a valid option.")
+
+    if INITIAL_STATE == "CUSTOM":
+        initial_state = game_state.GameState(seed)
+
+        # Modify initial state here
+        initial_state.player = 0
+        initial_state.nodes = [set(), set()]
+        initial_state.roads = [[set(), set()], [set(), set()]]  # 1st index is player, 2nd index is road group
+        initial_state.turn = 1
+        initial_state.resources = [
+            {"y": 0, "g": 0, "r": 0, "b": 0},
+            {"y": 0, "g": 0, "r": 0, "b": 0},
+        ]
+        initial_state.tile_states = dict.fromkeys(game_state.TILE_TO_ADJ_NODES_DICT.keys())
+        initial_state.tile_node_counts = {tile: 0 for tile in game_state.TILE_TO_ADJ_NODES_DICT.keys()}
+    elif INITIAL_STATE == "DEFAULT":
+        initial_state = game_state.GameState(seed)
+    else:
+        raise Exception(f"INITIAL_STATE = {INITIAL_STATE} is not a valid option.")
+
+    draw_board(graph, initial_state)
+    event_loop(initial_state)

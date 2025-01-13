@@ -145,25 +145,16 @@ class TestGameState(unittest.TestCase):
         self.assertEqual(state.nodes[prev_player], {(0, 2)})
         self.assertEqual(state.roads[prev_player], [{(0, 2.5)}, set()])
         # Invalid inputs
-        with self.assertRaises(Exception):
-            state.move({(), (0, 2.5)})
-        with self.assertRaises(Exception):
-            state.move({(1,), ()})
-        with self.assertRaises(Exception):
-            state.move({(1, 1), ()})
-        with self.assertRaises(Exception):
-            state.move({(1, 1), (3,)})
-        with self.assertRaises(Exception):
-            state.move({(1, 1), (1, 2, 3)})
+        self.assertFalse(state.move({(), (0, 2.5)}))
+        self.assertFalse(state.move({(1,), ()}))
+        self.assertFalse(state.move({(1, 1), ()}))
+        self.assertFalse(state.move({(1, 1), (3,)}))
+        self.assertFalse(state.move({(1, 1), (1, 2, 3)}))
         # Moves that are already on the board
-        with self.assertRaises(Exception):
-            state.move({(0, 2), (1, 2.5)})
-        with self.assertRaises(Exception):
-            state.move({(0, 2), (1, 2.5)})
-        with self.assertRaises(Exception):
-            state.move({(1, 2), (0, 2.5)})
-        with self.assertRaises(Exception):
-            state.move({(1, 2), (0, 2.5)})
+        self.assertFalse(state.move({(0, 2), (1, 2.5)}))
+        self.assertFalse(state.move({(0, 2), (1, 2.5)}))
+        self.assertFalse(state.move({(1, 2), (0, 2.5)}))
+        self.assertFalse(state.move({(1, 2), (0, 2.5)}))
 
     def test_valid_initial_moves(self):
         state = game_state.GameState()
@@ -193,34 +184,21 @@ class TestGameState(unittest.TestCase):
         state.resources[0] = {"y": 100, "g": 100, "r": 100, "b": 100}
         state.resources[1] = {"y": 100, "g": 100, "r": 100, "b": 100}
         # Invalid inputs
-        with self.assertRaises(Exception):
-            state.move({(), (0, 2.5)})
-        with self.assertRaises(Exception):
-            state.move({(1,), ()})
-        with self.assertRaises(Exception):
-            state.move({(1, 1), ()})
-        with self.assertRaises(Exception):
-            state.move({(1, 1), (3,)})
-        with self.assertRaises(Exception):
-            state.move({(1, 1), (1, 2, 3)})
+        self.assertFalse(state.move({(), (0, 2.5)}))
+        self.assertFalse(state.move({(1,), ()}))
+        self.assertFalse(state.move({(1, 1), ()}))
+        self.assertFalse(state.move({(1, 1), (3,)}))
+        self.assertFalse(state.move({(1, 1), (1, 2, 3)}))
         # Moves that are already on the board
-        with self.assertRaises(Exception):
-            state.move({(2, 2), (2.5, 2)})
-        with self.assertRaises(Exception):
-            state.move({(3, 2), (3, 2.5)})
-        with self.assertRaises(Exception):
-            state.move({(2, 1), (2, 1.5)})
-        with self.assertRaises(Exception):
-            state.move({(3, 4), (3, 3.5)})
+        self.assertFalse(state.move({(2, 2), (2.5, 2)}))
+        self.assertFalse(state.move({(3, 2), (3, 2.5)}))
+        self.assertFalse(state.move({(2, 1), (2, 1.5)}))
+        self.assertFalse(state.move({(3, 4), (3, 3.5)}))
         # Moves that are not connected to the correct network
-        with self.assertRaises(Exception):
-            state.move({(4, 4), (4, 3.5)})
-        with self.assertRaises(Exception):
-            state.move({(4, 4), (4, 3.5)})
-        with self.assertRaises(Exception):
-            state.move({(3, 1), (2.5, 1)})
-        with self.assertRaises(Exception):
-            state.move({(3, 1), (3, 1.5)})
+        self.assertFalse(state.move({(4, 4), (4, 3.5)}))
+        self.assertFalse(state.move({(4, 4), (4, 3.5)}))
+        self.assertFalse(state.move({(3, 1), (2.5, 1)}))
+        self.assertFalse(state.move({(3, 1), (3, 1.5)}))
 
     def test_score(self):
         state = game_state.GameState()

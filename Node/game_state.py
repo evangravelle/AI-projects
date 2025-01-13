@@ -13,6 +13,7 @@ Board state uses the same grid, the top left vertice is what identifies a tile.
 
 import math
 import random
+import sys
 
 # Upper left location of each tile
 # TILES = [
@@ -203,6 +204,10 @@ def create_random_board(rng_seed):
 
 
 def are_roads_connected(group1, group2):
+    for road in group1:
+        if PLAYABLE_ROADS_DICT[road] & group2:
+            return True
+
     return False
 
 
@@ -230,6 +235,14 @@ class GameState:
             if len(piece) != 2:
                 print(f"Move invalid because length of piece {piece} is not 2.")
                 return False
+
+        # Node and road locations must be unoccupied.
+        all_pieces = (
+                self.nodes[0] | self.nodes[1] | self.roads[0][0] | self.roads[0][1] | self.roads[1][0] | self.roads[1][1]
+        )
+        if not all_pieces.isdisjoint(move):
+            print(f"Move invalid because move {move} overlaps with existing pieces {all_pieces}.")
+            return False
 
         # First 2 turns for each player should have exactly one node and one road
         if self.turn < 5:
@@ -275,31 +288,26 @@ class GameState:
                 return False
 
             # Roads and nodes must be connected to one of the correct player's road networks.
-            # TODO: If adding a road and a node, need to verify that the road is connected to the network, then
-            #       the node is connected to the new bigger network
-            # TODO: If adding more than 1 road, need to verify that one of the roads is connected to the network, then
-            #       the 2nd is connected to the new bigger network
+            # Check roads first.
             curr_roads = self.roads[self.player][0] | self.roads[self.player][1]
-            playable_nodes = get_playable_nodes(curr_roads)
             playable_roads = get_playable_roads(curr_roads)
-
-            for piece in move:
-                if piece_is_node(piece):
-                    if piece not in playable_nodes:
-                        print(f"Move invalid because piece {piece} not in playable nodes {playable_nodes}")
-                        return False
+            road_pieces = {piece for piece in move if not piece_is_node(piece)}
+            while road_pieces:
+                connected_road = next((road for road in road_pieces if road in playable_roads), None)
+                if connected_road:
+                    curr_roads.add(connected_road)
+                    playable_roads = get_playable_roads(curr_roads)
+                    road_pieces.remove(connected_road)
                 else:
-                    if piece not in playable_roads:
-                        print(f"Move invalid because piece {piece} not in playable roads {playable_roads}")
-                        return False
+                    print(f"Move invalid because no road {road_pieces} is playable {playable_roads}")
+                    return False
 
-        # Node and road locations must be unoccupied.
-        all_pieces = (
-            self.nodes[0] | self.nodes[1] | self.roads[0][0] | self.roads[0][1] | self.roads[1][0] | self.roads[1][1]
-        )
-        if not all_pieces.isdisjoint(move):
-            print(f"Move invalid because not all pieces {all_pieces | move} are unique.")
-            return False
+            playable_nodes = get_playable_nodes(curr_roads)
+            node_pieces = [piece for piece in move if piece_is_node(piece)]
+            for node in node_pieces:
+                if node not in playable_nodes:
+                    print(f"Move invalid because node {node} not in playable nodes {playable_nodes}")
+                    return False
 
         # If we made it this far, move is valid.
         return True
@@ -317,7 +325,7 @@ class GameState:
 
         # Check if move is valid given game state.
         if not self.is_move_valid(move):
-            raise Exception("Move is not valid.")
+            return False
 
         # Spend resources for the move.
         if self.turn >= 5:
@@ -342,6 +350,7 @@ class GameState:
 
         # Finish turn.
         self.turn += 1
+        return True
 
     def update_tile_states(self, move):
         for piece in move:
@@ -371,12 +380,12 @@ class GameState:
                     if len(self.roads[self.player][0]) == 0:
                         self.roads[self.player][0].add(piece)
                     else:
-                        if are_roads_connected(self.roads[self.player][0], piece):
+                        if are_roads_connected(self.roads[self.player][0], {piece}):
                             self.roads[self.player][0].add(piece)
                         else:
                             self.roads[self.player][1].add(piece)
                 else:
-                    if are_roads_connected(self.roads[self.player][0], piece):
+                    if are_roads_connected(self.roads[self.player][0], {piece}):
                         self.roads[self.player][0].add(piece)
                     else:
                         self.roads[self.player][1].add(piece)
@@ -387,7 +396,7 @@ class GameState:
             self.roads[self.player][1] = set()
 
     def update_score(self):
-        scores = (len(self.nodes[0]), len(self.nodes[1]))
+        scores = [len(self.nodes[0]), len(self.nodes[1])]
 
         # Check the number of groups before computing the max group size
         max_group_sizes = [0, 0]
@@ -401,15 +410,15 @@ class GameState:
 
         if max_group_sizes[0] > max_group_sizes[1]:
             scores[0] += 2
-        elif max_group_sizes[0] > max_group_sizes[1]:
+        elif max_group_sizes[1] > max_group_sizes[0]:
             scores[1] += 2
 
         if scores[0] >= 10:
             print("PLAYER 1 WINS!")
-            raise Exception("")
+            sys.exit(0)
         elif scores[1] >= 10:
             print("PLAYER 2 WINS!")
-            raise Exception("")
+            sys.exit(0)
 
         self.score = scores
 
