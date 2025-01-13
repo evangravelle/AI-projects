@@ -413,6 +413,8 @@ class GameState:
         elif max_group_sizes[1] > max_group_sizes[0]:
             scores[1] += 2
 
+        # TODO: Check tile states, add a point for each surrounded tile
+
         if scores[0] >= 10:
             print("PLAYER 1 WINS!")
             sys.exit(0)
